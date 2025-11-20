@@ -122,9 +122,6 @@ impl Apk {
                         }
                     }
                 }
-                ValueSigningBlock::SignatureSchemeV3Block(_) => {
-                    return Err("Signature scheme v3 is not supported for the moment".to_string());
-                }
                 _ => {}
             }
         }

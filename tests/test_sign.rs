@@ -39,10 +39,6 @@ mod test {
         let apk_path = dir.join("sms2call-1.0.8.apk");
         let apk = Apk::new(apk_path).unwrap();
         apk.verify().unwrap();
-
-        let apk_path = dir.join("de.kaffeemitkoffein.imagepipe_51.apk");
-        let apk = Apk::new(apk_path).unwrap();
-        assert!(apk.verify().is_err()); // for now v3 verification is not supported
     }
 
     #[test]

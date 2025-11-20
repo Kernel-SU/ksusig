@@ -12,7 +12,6 @@ use serde::{Deserialize, Serialize};
 pub mod algorithms;
 pub mod digest;
 pub mod scheme_v2;
-pub mod scheme_v3;
 
 use crate::utils::create_fixed_buffer_8;
 #[cfg(feature = "directprint")]
@@ -21,7 +20,6 @@ use crate::utils::MagicNumberDecoder;
 use crate::utils::print_string;
 use crate::utils::{add_space, MyReader};
 use scheme_v2::{SignatureSchemeV2, Signers as SignersV2, SIGNATURE_SCHEME_V2_BLOCK_ID};
-use scheme_v3::{SignatureSchemeV3, Signers as SignersV3, SIGNATURE_SCHEME_V3_BLOCK_ID};
 
 /// Magic number of the APK Signing Block
 pub const MAGIC: &[u8; 16] = b"APK Sig Block 42";
@@ -83,9 +81,6 @@ pub enum ValueSigningBlock {
 
     /// Signature Scheme V2
     SignatureSchemeV2Block(SignatureSchemeV2),
-
-    /// Signature Scheme V3
-    SignatureSchemeV3Block(SignatureSchemeV3),
 }
 
 impl ValueSigningBlock {
@@ -94,17 +89,11 @@ impl ValueSigningBlock {
         Self::SignatureSchemeV2Block(SignatureSchemeV2::new(signers))
     }
 
-    /// Create a new ValueSigningBlock::SignatureSchemeV3Block
-    pub const fn new_v3(signers: SignersV3) -> Self {
-        Self::SignatureSchemeV3Block(SignatureSchemeV3::new(signers))
-    }
-
     /// ID of the value
     pub const fn id(&self) -> u32 {
         match self {
             Self::BaseSigningBlock(ref block) => block.id,
             Self::SignatureSchemeV2Block(ref scheme) => scheme.id,
-            Self::SignatureSchemeV3Block(ref scheme) => scheme.id,
         }
     }
 
@@ -113,7 +102,6 @@ impl ValueSigningBlock {
         match self {
             Self::BaseSigningBlock(ref block) => block.size,
             Self::SignatureSchemeV2Block(ref scheme) => scheme.size,
-            Self::SignatureSchemeV3Block(ref scheme) => scheme.size,
         }
     }
 
@@ -154,9 +142,6 @@ impl ValueSigningBlock {
                 SIGNATURE_SCHEME_V2_BLOCK_ID => Self::SignatureSchemeV2Block(
                     SignatureSchemeV2::parse(pair_size, pair_id, block_value)?,
                 ),
-                SIGNATURE_SCHEME_V3_BLOCK_ID => Self::SignatureSchemeV3Block(
-                    SignatureSchemeV3::parse(pair_size, pair_id, block_value)?,
-                ),
                 VERITY_PADDING_BLOCK_ID => {
                     add_space!(4);
                     print_string!("Padding Block of {} bytes", block_value.len());
@@ -179,7 +164,6 @@ impl ValueSigningBlock {
     pub fn to_u8(&self) -> Vec<u8> {
         match self {
             Self::SignatureSchemeV2Block(scheme) => scheme.to_u8(),
-            Self::SignatureSchemeV3Block(scheme) => scheme.to_u8(),
             Self::BaseSigningBlock(block) => block.to_u8(),
         }
     }
