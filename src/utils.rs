@@ -27,7 +27,6 @@ macro_rules! print_string {
 }
 pub(crate) use print_string;
 
-use crate::signing_block::PROOF_OF_ROTATION_ATTR_ID;
 use crate::signing_block::SOURCE_STAMP_BLOCK_ID;
 use crate::signing_block::VERITY_PADDING_BLOCK_ID;
 use crate::SIGNATURE_SCHEME_V2_BLOCK_ID;
@@ -71,7 +70,6 @@ impl std::fmt::Display for MagicNumberDecoder {
             Self::Normal(num) => match *num {
                 VERITY_PADDING_BLOCK_ID => "VERITY_PADDING_BLOCK_ID",
                 SOURCE_STAMP_BLOCK_ID => "SOURCE_STAMP_BLOCK_ID",
-                PROOF_OF_ROTATION_ATTR_ID => "PROOF_OF_ROTATION_ATTR_ID",
                 SIGNATURE_SCHEME_V2_BLOCK_ID => "Signature Scheme V2",
                 _ => "Unknown",
             },

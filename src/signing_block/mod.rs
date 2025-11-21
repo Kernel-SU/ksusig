@@ -33,9 +33,6 @@ pub const VERITY_PADDING_BLOCK_ID: u32 = 0x4272_6577;
 /// <https://android.googlesource.com/platform/frameworks/base/+/master/core/java/android/util/apk/SourceStampVerifier.java>
 pub const SOURCE_STAMP_BLOCK_ID: u32 = 0x6dff_800d;
 
-/// <https://android.googlesource.com/platform/frameworks/base/+/master/core/java/android/util/apk/SourceStampVerifier.java>
-pub const PROOF_OF_ROTATION_ATTR_ID: u32 = 0x9d63_03f7;
-
 /// Size of a u64
 const SIZE_UINT64: usize = mem::size_of::<u64>();
 
