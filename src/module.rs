@@ -1,4 +1,4 @@
-//! Handling the APK file by providing methods as `Apk` struct.
+//! Handling the Module file by providing methods as `Apk` struct.
 
 use std::{
     fs::{read, File},
@@ -12,29 +12,29 @@ use crate::{
 };
 
 #[cfg(feature = "hash")]
-use crate::{digest_apk, Algorithms};
+use crate::{digest_module, Algorithms};
 
 #[cfg(feature = "signing")]
 use crate::ValueSigningBlock;
 
-/// The `Module` struct represents the APK file.
+/// The `Module` struct represents the Module file.
 #[derive(Default)]
 pub struct Module {
-    /// If the APK is raw (not signed)
+    /// If the Module is raw (not signed)
     pub raw: bool,
 
-    /// The path of the APK file.
+    /// The path of the Module file.
     pub path: PathBuf,
 
-    /// The length of the APK file.
+    /// The length of the Module file.
     pub file_len: usize,
 
-    /// The signing block of the APK file.
+    /// The signing block of the Module file.
     pub sig: Option<SigningBlock>,
 }
 
 impl Module {
-    /// Create a new APK file.
+    /// Create a new Module file.
     /// # Errors
     /// Returns an error if the path is not found.
     pub fn new(path: PathBuf) -> Result<Self, std::io::Error> {
@@ -47,7 +47,7 @@ impl Module {
         })
     }
 
-    /// Create a new raw APK file.
+    /// Create a new raw Module file.
     /// # Errors
     /// Returns an error if the path is not found.
     pub fn new_raw(path: PathBuf) -> Result<Self, std::io::Error> {
@@ -57,7 +57,7 @@ impl Module {
         })
     }
 
-    /// Decode the signing block of the APK file.
+    /// Decode the signing block of the Module file.
     /// # Errors
     /// Returns a string if the decoding fails.
     pub fn get_signing_block(&self) -> Result<SigningBlock, std::io::Error> {
@@ -67,7 +67,7 @@ impl Module {
                 if self.raw {
                     return Err(std::io::Error::new(
                         std::io::ErrorKind::InvalidData,
-                        "APK is raw",
+                        "Module is raw",
                     ));
                 }
                 let file = File::open(&self.path)?;
@@ -77,7 +77,7 @@ impl Module {
         }
     }
 
-    /// Verify the APK file.
+    /// Verify the Module file.
     /// # Errors
     /// Returns a string if the verification fails.
     #[cfg(feature = "signing")]
@@ -128,7 +128,7 @@ impl Module {
         Ok(())
     }
 
-    /// find_eocd finds the End of Central Directory Record of the APK file.
+    /// find_eocd finds the End of Central Directory Record of the Module file.
     /// # Errors
     /// Returns a string if the End of Central Directory Record is not found.
     /// Or a problem occurs
@@ -137,7 +137,7 @@ impl Module {
         find_eocd(&mut file, self.file_len)
     }
 
-    /// Get the offsets of the APK file.
+    /// Get the offsets of the Module file.
     /// # Errors
     /// Returns a string if the offsets are not found.
     pub fn get_offsets(&self) -> Result<FileOffsets, std::io::Error> {
@@ -172,19 +172,19 @@ impl Module {
         }
     }
 
-    /// Calculate the digest of the APK file.
+    /// Calculate the digest of the Module file.
     /// # Errors
     /// Returns a string if the digest fails.
     #[cfg(feature = "hash")]
     pub fn digest(&self, algo: &Algorithms) -> Result<Vec<u8>, std::io::Error> {
         let mut file = File::open(&self.path)?;
         let offsets = self.get_offsets()?;
-        digest_apk(&mut file, &offsets, algo)
+        digest_module(&mut file, &offsets, algo)
     }
 
-    /// Get the raw APK file.
+    /// Get the raw Module file.
     /// # Errors
-    /// Returns a string if the raw APK file fails.
+    /// Returns a string if the raw Module file fails.
     pub fn get_raw_apk(&self) -> Result<Vec<u8>, std::io::Error> {
         let full_raw_file = read(&self.path)?;
 
@@ -228,7 +228,7 @@ impl Module {
         Ok(apk_without_signature)
     }
 
-    /// Write the APK file with the signature.
+    /// Write the Module file with the signature.
     /// # Errors
     /// Returns a string if the writing fails.
     pub fn write_with_signature<W: Write>(&self, writer: &mut W) -> Result<(), std::io::Error> {
@@ -261,7 +261,7 @@ impl Module {
         Ok(())
     }
 
-    /// Sign the APK file with the given algorithm.
+    /// Sign the Module file with the given algorithm.
     /// # Errors
     /// Returns a string if the signing fails.
     #[cfg(feature = "signing")]

@@ -1,5 +1,5 @@
 //! # KSU Signing Block
-//! This library is used to extract the KSU Signing Block from an APK file.
+//! This library is used to extract the KSU Signing Block from an Module file.
 //!
 //! CLI usage:
 //! ```shell
@@ -33,7 +33,7 @@ pub mod zip;
 
 // re-export
 #[cfg(feature = "hash")]
-pub use signing_block::digest::digest_apk;
+pub use signing_block::digest::digest_module;
 
 pub use module::Module;
 pub use signing_block::algorithms::Algorithms;

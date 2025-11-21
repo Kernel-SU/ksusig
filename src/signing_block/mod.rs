@@ -260,7 +260,7 @@ impl SigningBlock {
         })
     }
 
-    /// Extract the KSU Signing Block from the APK file
+    /// Extract the KSU Signing Block from the Module file
     /// # Errors
     /// Return an error appends during decoding
     pub fn from_reader<R: Read + Seek>(
@@ -419,7 +419,7 @@ impl SigningBlock {
         })
     }
 
-    /// Extract the KSU Signing Block from the APK file
+    /// Extract the KSU Signing Block from the Module file
     /// # Errors
     /// Return an error appends during decoding
     pub fn from_u8(data: &[u8]) -> Result<Self, String> {

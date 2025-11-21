@@ -1,4 +1,4 @@
-//! Zip file utilities - an APK is a zip file
+//! Zip file utilities - an Module is a zip file
 
 use std::{
     io::{self, BufReader, Read, Seek, SeekFrom},
@@ -54,7 +54,7 @@ impl EndOfCentralDirectoryRecord {
     }
 }
 
-/// Find the EOCD of the APK file
+/// Find the EOCD of the Module file
 /// # Errors
 /// Returns an error if the file cannot be read
 pub fn find_eocd<R: Read + Seek>(
@@ -139,7 +139,7 @@ pub(crate) fn create_fixed_buffer_2(buf: &[u8]) -> [u8; 2] {
     buffer
 }
 
-/// File offsets of the APK (a zip file)
+/// File offsets of the Module (a zip file)
 ///
 /// <https://source.android.com/docs/security/features/apksigning/v2>
 ///

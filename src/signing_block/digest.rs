@@ -1,4 +1,4 @@
-//! Digesting functions for APK
+//! Digesting functions for Module
 //!
 //! Gated behind the `hash` feature
 
@@ -133,15 +133,15 @@ pub fn digest_final_digest(chunks: Vec<Vec<u8>>, sig: &Algorithms) -> Vec<u8> {
     sig.hash(&final_chunk)
 }
 
-/// Digest the APK file
+/// Digest the Module file
 /// # Errors
 /// Returns an error if the file cannot be read
-pub fn digest_apk<R: Read + Seek>(
-    apk: &mut R,
+pub fn digest_module<R: Read + Seek>(
+    module: &mut R,
     offsets: &FileOffsets,
     algo: &Algorithms,
 ) -> Result<Vec<u8>, io::Error> {
-    apk.seek(SeekFrom::Start(0))?;
+    module.seek(SeekFrom::Start(0))?;
     let FileOffsets {
         start_content,
         stop_content,
@@ -152,21 +152,21 @@ pub fn digest_apk<R: Read + Seek>(
     } = *offsets;
     let mut digestives = Vec::new();
     digestives.append(&mut digest_zip_contents(
-        apk,
+        module,
         start_content,
         stop_content - start_content,
         algo,
     )?);
     // digest central directory
     digestives.append(&mut digest_central_directory(
-        apk,
+        module,
         start_cd,
         stop_cd - start_cd,
         algo,
     )?);
     // digest end of central directory
     digestives.append(&mut digest_end_of_central_directory(
-        apk,
+        module,
         start_eocd,
         stop_eocd - start_eocd,
         stop_content,
