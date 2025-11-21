@@ -27,7 +27,7 @@ macro_rules! print_string {
 }
 pub(crate) use print_string;
 
-use crate::signing_block::SOURCE_STAMP_BLOCK_ID;
+use crate::signing_block::source_stamp::SOURCE_STAMP_BLOCK_ID;
 use crate::signing_block::VERITY_PADDING_BLOCK_ID;
 use crate::SIGNATURE_SCHEME_V2_BLOCK_ID;
 

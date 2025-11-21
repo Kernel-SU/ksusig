@@ -40,7 +40,10 @@ pub use signing_block::algorithms::Algorithms;
 #[cfg(feature = "signing")]
 pub use signing_block::algorithms::PrivateKey;
 pub use signing_block::scheme_v2::{SignatureSchemeV2, SIGNATURE_SCHEME_V2_BLOCK_ID};
-pub use signing_block::{scheme_v2, RawData, SigningBlock, ValueSigningBlock, MAGIC, MAGIC_LEN};
+pub use signing_block::source_stamp::{SourceStamp, SOURCE_STAMP_BLOCK_ID};
+pub use signing_block::{
+    scheme_v2, source_stamp, RawData, SigningBlock, ValueSigningBlock, MAGIC, MAGIC_LEN,
+};
 pub use utils::MyReader;
 
 // shortcuts
