@@ -16,8 +16,18 @@ serde = { version = "1.0.217", features = ["derive"], optional = true }
 md5 = { version = "0.7.0", optional = true }
 sha1 = { version = "0.10.6", optional = true }
 sha2 = { version = "0.10.8", optional = true }
-p256 = { version = "0.13", features = ["ecdsa"], optional = true }
-p384 = { version = "0.13", features = ["ecdsa"], optional = true }
+p256 = { version = "0.13", features = ["ecdsa", "pkcs8", "pem"], optional = true }
+p384 = { version = "0.13", features = ["ecdsa", "pkcs8", "pem"], optional = true }
+# keystore support
+pem = { version = "3.0", optional = true }
+pkcs8 = { version = "0.10", features = ["encryption", "pem"], optional = true }
+p12 = { version = "0.6", optional = true }
+x509-cert = { version = "0.2", optional = true }
+# certificate chain verification
+webpki = { version = "0.22", optional = true }
+# CLI framework
+clap = { version = "4.5", features = ["derive", "cargo"] }
+base64 = "0.22"
 
 [dev-dependencies]
 # test serialization (note that serialization is used in web_demo)
@@ -36,10 +46,16 @@ x509-parser = { version = "0.17.0" }
 [features]
 # by default, very opinionated features are enabled
 # used mostly for main.rs
-default = ["directprint", "serde", "hash", "signing"]
+default = ["directprint", "serde", "hash", "signing", "keystore", "verify"]
 
 # verify the KSU Signing Block
 signing = ["hash", "dep:p256", "dep:p384"]
+
+# keystore support (PEM and P12 format)
+keystore = ["signing", "dep:pem", "dep:pkcs8", "dep:p12", "dep:x509-cert"]
+
+# certificate chain verification
+verify = ["signing", "dep:x509-cert"]
 
 # allows to serialize and deserialize structs with serde
 serde = ["dep:serde"]

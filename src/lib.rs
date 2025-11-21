@@ -25,11 +25,21 @@
 )]
 #![warn(clippy::multiple_crate_versions)]
 
-pub mod module;
 pub mod common;
+pub mod module;
 pub mod signing_block;
 pub mod utils;
 pub mod zip;
+
+// Conditional modules
+#[cfg(feature = "keystore")]
+pub mod keystore;
+
+#[cfg(feature = "signing")]
+pub mod signer;
+
+#[cfg(feature = "verify")]
+pub mod verify;
 
 // re-export
 #[cfg(feature = "hash")]
@@ -49,6 +59,23 @@ pub use signing_block::{
     scheme_v2, source_stamp, RawData, SigningBlock, ValueSigningBlock, MAGIC, MAGIC_LEN,
 };
 pub use utils::MyReader;
+
+// Keystore exports
+#[cfg(feature = "keystore")]
+pub use keystore::{
+    load_p12, load_p12_from_bytes, load_pem, load_pem_from_bytes, KeystoreError, SignerCredentials,
+};
+
+// Signer exports
+#[cfg(feature = "signing")]
+pub use signer::{ModuleSigner, ModuleSignerConfig, SourceStampSigner as NewSourceStampSigner, V2Signer};
+
+// Verify exports
+#[cfg(feature = "verify")]
+pub use verify::{
+    verify_signing_block, verify_with_roots, CertChainVerifier, SignatureVerifier, TrustedRoots,
+    VerifyError, VerifyResult,
+};
 
 // shortcuts
 use utils::add_space;

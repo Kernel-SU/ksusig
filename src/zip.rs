@@ -58,23 +58,23 @@ impl EndOfCentralDirectoryRecord {
 /// # Errors
 /// Returns an error if the file cannot be read
 pub fn find_eocd<R: Read + Seek>(
-    apk: &mut R,
+    module: &mut R,
     file_len: usize,
 ) -> Result<EndOfCentralDirectoryRecord, io::Error> {
     for i in SIZE_OF_EOCD_SIG..file_len {
         let idx = -(i as i64);
-        apk.seek(SeekFrom::End(idx))?;
+        module.seek(SeekFrom::End(idx))?;
         let mut reader =
-            BufReader::with_capacity(SIZE_OF_EOCD_SIG, apk.take(SIZE_OF_EOCD_SIG as u64));
+            BufReader::with_capacity(SIZE_OF_EOCD_SIG, module.take(SIZE_OF_EOCD_SIG as u64));
         let mut buf = [0; SIZE_OF_EOCD_SIG];
         reader.read_exact(&mut buf)?;
         if buf == EOCD_SIG_U8 {
             if i < 22 {
                 continue;
             }
-            apk.seek(SeekFrom::End(idx))?;
+            module.seek(SeekFrom::End(idx))?;
             let mut buff_block: Vec<u8> = vec![0; i];
-            apk.read_exact(&mut buff_block)?;
+            module.read_exact(&mut buff_block)?;
             let disk_number = match buff_block.get(4..6) {
                 Some(data) => u16::from_le_bytes(create_fixed_buffer_2(data)),
                 None => return Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid EOCD")),

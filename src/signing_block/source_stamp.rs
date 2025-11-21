@@ -42,9 +42,10 @@ pub struct SourceStamp {
 
 impl SourceStamp {
     /// Create a new source stamp
-    pub const fn new(stamp_block: StampBlock) -> Self {
+    pub fn new(stamp_block: StampBlock) -> Self {
         Self {
-            size: stamp_block.size,
+            // size = ID (4 bytes) + stamp_block.size field (4 bytes) + stamp_block content
+            size: std::mem::size_of::<u32>() + std::mem::size_of::<u32>() + stamp_block.size,
             id: SOURCE_STAMP_BLOCK_ID,
             stamp_block,
         }

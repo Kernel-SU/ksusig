@@ -1,4 +1,4 @@
-//! Handling the Module file by providing methods as `Apk` struct.
+//! Handling the Module file by providing methods as `Module` struct.
 
 use std::{
     fs::{read, File},
@@ -185,7 +185,7 @@ impl Module {
     /// Get the raw Module file.
     /// # Errors
     /// Returns a string if the raw Module file fails.
-    pub fn get_raw_apk(&self) -> Result<Vec<u8>, std::io::Error> {
+    pub fn get_raw_module(&self) -> Result<Vec<u8>, std::io::Error> {
         let full_raw_file = read(&self.path)?;
 
         if self.raw {
@@ -223,9 +223,9 @@ impl Module {
                 }
             };
 
-        let apk_without_signature = [start_without_sig, end_without_sig, &eocd_serialized].concat();
+        let module_without_signature = [start_without_sig, end_without_sig, &eocd_serialized].concat();
 
-        Ok(apk_without_signature)
+        Ok(module_without_signature)
     }
 
     /// Write the Module file with the signature.

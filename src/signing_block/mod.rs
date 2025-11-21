@@ -89,7 +89,7 @@ impl ValueSigningBlock {
     }
 
     /// Create a new ValueSigningBlock::SourceStampBlock
-    pub const fn new_source_stamp(stamp_block: StampBlock) -> Self {
+    pub fn new_source_stamp(stamp_block: StampBlock) -> Self {
         Self::SourceStampBlock(SourceStamp::new(stamp_block))
     }
 
@@ -206,6 +206,36 @@ pub struct SigningBlock {
 }
 
 impl SigningBlock {
+    /// Create a new SigningBlock without padding
+    pub fn new(content: Vec<ValueSigningBlock>) -> Self {
+        let content_size = content.iter().fold(0, |acc, x| acc + x.size());
+        let size = content_size + SIZE_UINT64 + MAGIC_LEN;
+        let total_size = SIZE_UINT64 + size;
+        Self {
+            file_offset_start: 0,
+            file_offset_end: total_size,
+            size_of_block_start: size,
+            content_size,
+            content,
+            size_of_block_end: size,
+            magic: *MAGIC,
+        }
+    }
+
+    /// Recalculate the size fields based on current content
+    pub fn recalculate_size(&mut self) {
+        self.content_size = self.content.iter().fold(0, |acc, x| acc + x.size());
+        let size = self.content_size + SIZE_UINT64 + MAGIC_LEN;
+        self.size_of_block_start = size;
+        self.size_of_block_end = size;
+        self.file_offset_end = self.file_offset_start + SIZE_UINT64 + size;
+    }
+
+    /// Get mutable reference to content blocks
+    pub fn content_mut(&mut self) -> &mut Vec<ValueSigningBlock> {
+        &mut self.content
+    }
+
     /// Create a new SigningBlock
     /// # Errors
     /// Return an error appends during creation of the block
