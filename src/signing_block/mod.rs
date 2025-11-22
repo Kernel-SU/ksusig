@@ -29,7 +29,7 @@ pub const MAGIC: &[u8; 16] = b"KSU Sig Block 42";
 /// Length of the magic number
 pub const MAGIC_LEN: usize = MAGIC.len();
 
-/// <https://android.googlesource.com/platform/tools/apksig/+/master/src/main/java/com/android/apksig/internal/apk/ApkSigningBlockUtils.java>
+/// <https://android.googlesource.com/platform/tools/modsig/+/master/src/main/java/com/android/modsig/internal/apk/apksigningBlockUtils.java>
 pub const VERITY_PADDING_BLOCK_ID: u32 = 0x4272_6577;
 
 /// Size of a u64

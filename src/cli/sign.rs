@@ -1,6 +1,6 @@
 //! Sign command - Sign module files
 
-use apksig::{
+use modsig::{
     common::{Digest, Digests},
     digest_module, load_p12, load_pem, zip::find_eocd, Algorithms, ModuleSigner,
     ModuleSignerConfig,
@@ -147,7 +147,7 @@ pub fn execute(args: SignArgs) -> Result<(), Box<dyn std::error::Error>> {
     println!("  EOCD: {} 字节 @ {}", eocd_size, eocd_offset);
 
     // 构建文件偏移量
-    let offsets = apksig::zip::FileOffsets {
+    let offsets = modsig::zip::FileOffsets {
         start_content: 0,
         stop_content: cd_offset,
         start_cd: cd_offset,
@@ -201,7 +201,7 @@ fn write_signed_module(
     output_path: &PathBuf,
     signing_block: &[u8],
     cd_offset: usize,
-    eocd: &apksig::zip::EndOfCentralDirectoryRecord,
+    eocd: &modsig::zip::EndOfCentralDirectoryRecord,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let input_file = File::open(input_path)?;
     let mut reader = BufReader::new(input_file);
@@ -230,7 +230,7 @@ fn write_signed_module(
     copy(&mut cd_reader, &mut writer)?;
 
     // 4. 写入更新后的 EOCD (更新 CD offset)
-    let new_eocd = apksig::zip::EndOfCentralDirectoryRecord {
+    let new_eocd = modsig::zip::EndOfCentralDirectoryRecord {
         file_offset: eocd.file_offset + signing_block.len(),
         signature: eocd.signature,
         disk_number: eocd.disk_number,

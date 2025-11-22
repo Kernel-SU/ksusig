@@ -181,7 +181,7 @@ pub struct SignedData {
     /// This attribute is still in public to allow the user to create a custom SignedData
     /// but it is not recommended to change it manually - use at your own risk
     ///
-    /// Bug from apksigner tool - Thanks @obfusk
+    /// Bug from modsigner tool - Thanks @obfusk
     pub _private_auto_padding_fix: bool,
 }
 

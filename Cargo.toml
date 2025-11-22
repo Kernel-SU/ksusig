@@ -1,15 +1,15 @@
 [package]
-name = "apksig"
+name = "modsig"
 version = "0.3.0"
 edition = "2021"
 description = "Decoding the KSU Signing Block"
-documentation = "https://docs.rs/apksig"
+documentation = "https://docs.rs/modsig"
 license = "MIT"
 readme = "./README.md"
-repository = "https://github.com/Its-Just-Nans/apksig"
-keywords = ["apk", "android", "signing", "signature", "apksig"]
+repository = "https://github.com/Kernel-SU/modsig"
+keywords = ["KernelSU", "signing", "signature", "modsig", "module"]
 categories = ["api-bindings", "command-line-utilities"]
-exclude = ["tests/", "web_demo/"]
+exclude = ["tests/"]
 
 [dependencies]
 serde = { version = "1.0.217", features = ["derive"], optional = true }

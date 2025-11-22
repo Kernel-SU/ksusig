@@ -1,4 +1,4 @@
-//! Command-line interface for apksig
+//! Command-line interface for modsig
 
 use clap::{Parser, Subcommand};
 
@@ -8,7 +8,7 @@ pub mod verify;
 
 /// KSU Module签名工具
 #[derive(Parser)]
-#[command(name = "apksig")]
+#[command(name = "modsig")]
 #[command(author, version, about, long_about = None)]
 pub struct Cli {
     /// 子命令

@@ -3,8 +3,8 @@
 //!
 //! CLI usage:
 //! ```shell
-//! cargo install apksig
-//! apksig <filename>
+//! cargo install modsig
+//! modsig <filename>
 //! ```
 //!
 

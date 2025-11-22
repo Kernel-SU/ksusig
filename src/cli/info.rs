@@ -1,6 +1,6 @@
 //! Info command - Display signing block information
 
-use apksig::SigningBlock;
+use modsig::SigningBlock;
 use clap::Args;
 use std::fs::File;
 use std::io::{BufReader, Seek, SeekFrom};
@@ -37,13 +37,13 @@ pub fn execute(args: InfoArgs) -> Result<(), Box<dyn std::error::Error>> {
                 println!("签名块内容:");
                 for value in &sig_block.content {
                     match value {
-                        apksig::ValueSigningBlock::SignatureSchemeV2Block(_) => {
+                        modsig::ValueSigningBlock::SignatureSchemeV2Block(_) => {
                             println!("  ✓ V2 Signature Scheme");
                         }
-                        apksig::ValueSigningBlock::SourceStampBlock(_) => {
+                        modsig::ValueSigningBlock::SourceStampBlock(_) => {
                             println!("  ✓ Source Stamp");
                         }
-                        apksig::ValueSigningBlock::BaseSigningBlock(data) => {
+                        modsig::ValueSigningBlock::BaseSigningBlock(data) => {
                             println!("  • Unknown Block (ID: 0x{:x})", data.id);
                         }
                     }
