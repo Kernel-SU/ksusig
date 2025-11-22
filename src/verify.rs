@@ -38,7 +38,7 @@ impl std::fmt::Display for VerifyError {
 impl std::error::Error for VerifyError {}
 
 /// Result of signature verification
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct VerifyResult {
     /// Whether the signature is valid
     pub signature_valid: bool,
@@ -52,19 +52,6 @@ pub struct VerifyResult {
     pub cert_chain: Vec<Vec<u8>>,
     /// Warnings during verification
     pub warnings: Vec<String>,
-}
-
-impl Default for VerifyResult {
-    fn default() -> Self {
-        Self {
-            signature_valid: false,
-            cert_chain_valid: false,
-            is_trusted: false,
-            certificate: None,
-            cert_chain: Vec::new(),
-            warnings: Vec::new(),
-        }
-    }
 }
 
 /// Built-in trusted root certificates
@@ -93,9 +80,7 @@ impl TrustedRoots {
     /// Create with built-in KSU root certificates
     ///
     /// Note: This is a placeholder. Add actual root certificates here.
-    pub fn with_builtin() -> Self {
-        let roots = Self::new();
-
+    pub const fn with_builtin() -> Self {
         // ==========================================
         // PLACEHOLDER: Add built-in root certificates here
         // ==========================================
@@ -115,7 +100,7 @@ impl TrustedRoots {
         // openssl req -new -x509 -days 3650 -key root_ca.key -out root_ca.crt
         // openssl x509 -in root_ca.crt -outform DER -out root_ca.der
 
-        roots
+        Self::new()
     }
 
     /// Add a trusted root certificate
@@ -154,7 +139,7 @@ impl TrustedRoots {
     }
 
     /// Check if roots store is empty
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         self.roots.is_empty()
     }
 }
@@ -172,7 +157,7 @@ impl CertChainVerifier {
     }
 
     /// Create a verifier with built-in trusted roots
-    pub fn with_builtin_roots() -> Self {
+    pub const fn with_builtin_roots() -> Self {
         Self::new(TrustedRoots::with_builtin())
     }
 
@@ -210,7 +195,7 @@ impl CertChainVerifier {
     }
 
     /// Get the trusted roots
-    pub fn trusted_roots(&self) -> &TrustedRoots {
+    pub const fn trusted_roots(&self) -> &TrustedRoots {
         &self.trusted_roots
     }
 }
@@ -228,12 +213,12 @@ impl SignatureVerifier {
     }
 
     /// Create with built-in trusted roots
-    pub fn with_builtin_roots() -> Self {
+    pub const fn with_builtin_roots() -> Self {
         Self::new(CertChainVerifier::with_builtin_roots())
     }
 
     /// Create with custom trusted roots
-    pub fn with_trusted_roots(roots: TrustedRoots) -> Self {
+    pub const fn with_trusted_roots(roots: TrustedRoots) -> Self {
         Self::new(CertChainVerifier::new(roots))
     }
 
@@ -258,9 +243,9 @@ impl SignatureVerifier {
 
                 // Get signed data bytes
                 let signed_data_bytes = signer.signed_data.to_u8();
-                let raw_data = signed_data_bytes
-                    .get(4..)
-                    .ok_or_else(|| VerifyError::InvalidSignature("Invalid signed data".to_string()))?;
+                let raw_data = signed_data_bytes.get(4..).ok_or_else(|| {
+                    VerifyError::InvalidSignature("Invalid signed data".to_string())
+                })?;
 
                 // Verify each signature
                 for (idx, sig) in signer.signatures.signatures_data.iter().enumerate() {
@@ -275,7 +260,7 @@ impl SignatureVerifier {
 
                     let algo = &digest.signature_algorithm_id;
                     algo.verify(pubkey, raw_data, &sig.signature)
-                        .map_err(|e| VerifyError::InvalidSignature(e))?;
+                        .map_err(VerifyError::InvalidSignature)?;
                 }
 
                 result.signature_valid = true;
@@ -343,13 +328,18 @@ impl SignatureVerifier {
                 for sig in &stamp_block.signatures.signatures_data {
                     let algo = &sig.signature_algorithm_id;
                     algo.verify(pubkey, raw_data, &sig.signature)
-                        .map_err(|e| VerifyError::InvalidSignature(e))?;
+                        .map_err(VerifyError::InvalidSignature)?;
                 }
 
                 result.signature_valid = true;
 
                 // Get certificate
-                if let Some(cert) = stamp_block.signed_data.certificates.certificates_data.first() {
+                if let Some(cert) = stamp_block
+                    .signed_data
+                    .certificates
+                    .certificates_data
+                    .first()
+                {
                     result.certificate = Some(cert.certificate.clone());
 
                     // Verify certificate (no chain for source stamp typically)

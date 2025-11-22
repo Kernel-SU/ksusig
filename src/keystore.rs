@@ -126,11 +126,14 @@ pub fn load_pem_from_bytes(
 }
 
 /// Parse a private key from PEM format
+/// # Errors
+/// Returns an error if the PEM data is invalid or the key type is unsupported
 fn parse_private_key_pem(
     pem_data: &[u8],
     password: Option<&str>,
 ) -> Result<(PrivateKey, Algorithms), KeystoreError> {
-    let pem_str = std::str::from_utf8(pem_data).map_err(|e| KeystoreError::PemError(e.to_string()))?;
+    let pem_str =
+        std::str::from_utf8(pem_data).map_err(|e| KeystoreError::PemError(e.to_string()))?;
 
     // Try to parse as unencrypted PKCS8 EC key first
     if let Ok(key) = p256::ecdsa::SigningKey::from_pkcs8_pem(pem_str) {
@@ -169,6 +172,8 @@ fn parse_private_key_pem(
 }
 
 /// Parse a certificate from PEM format and return DER bytes
+/// # Errors
+/// Returns an error if the PEM data is invalid
 fn parse_certificate_pem(pem_data: &[u8]) -> Result<Vec<u8>, KeystoreError> {
     let pem = pem::parse(pem_data).map_err(|e| KeystoreError::PemError(e.to_string()))?;
 
@@ -203,7 +208,10 @@ pub fn load_p12(path: &str, password: &str) -> Result<SignerCredentials, Keystor
 ///
 /// # Errors
 /// Returns `KeystoreError` if parsing fails
-pub fn load_p12_from_bytes(data: &[u8], password: &str) -> Result<SignerCredentials, KeystoreError> {
+pub fn load_p12_from_bytes(
+    data: &[u8],
+    password: &str,
+) -> Result<SignerCredentials, KeystoreError> {
     let p12 = p12::PFX::parse(data).map_err(|e| KeystoreError::P12Error(format!("{:?}", e)))?;
 
     // Decrypt and extract keys and certs
@@ -249,6 +257,8 @@ pub fn load_p12_from_bytes(data: &[u8], password: &str) -> Result<SignerCredenti
 }
 
 /// Parse a private key from DER format
+/// # Errors
+/// Returns an error if the DER data is invalid or the key type is unsupported
 fn parse_private_key_der(der_data: &[u8]) -> Result<(PrivateKey, Algorithms), KeystoreError> {
     // Try P256
     if let Ok(key) = p256::ecdsa::SigningKey::from_pkcs8_der(der_data) {
@@ -279,7 +289,9 @@ pub fn load_private_key_der(der_data: &[u8]) -> Result<(PrivateKey, Algorithms),
 /// Returns `KeystoreError` if the data is empty
 pub fn load_certificate_der(der_data: &[u8]) -> Result<Vec<u8>, KeystoreError> {
     if der_data.is_empty() {
-        return Err(KeystoreError::CertError("Empty certificate data".to_string()));
+        return Err(KeystoreError::CertError(
+            "Empty certificate data".to_string(),
+        ));
     }
     Ok(der_data.to_vec())
 }

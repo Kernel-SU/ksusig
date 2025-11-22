@@ -20,7 +20,7 @@ pub struct Cli {
 #[derive(Subcommand)]
 pub enum Commands {
     /// 对模块进行签名
-    Sign(sign::SignArgs),
+    Sign(Box<sign::SignArgs>),
 
     /// 验证模块签名
     Verify(verify::VerifyArgs),
@@ -38,7 +38,7 @@ impl Cli {
     /// 执行命令
     pub fn execute(self) -> Result<(), Box<dyn std::error::Error>> {
         match self.command {
-            Commands::Sign(args) => sign::execute(args),
+            Commands::Sign(args) => sign::execute(*args),
             Commands::Verify(args) => verify::execute(args),
             Commands::Info(args) => info::execute(args),
         }

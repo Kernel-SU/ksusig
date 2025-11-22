@@ -1,7 +1,7 @@
 //! Info command - Display signing block information
 
-use modsig::SigningBlock;
 use clap::Args;
+use modsig::SigningBlock;
 use std::fs::File;
 use std::io::{BufReader, Seek, SeekFrom};
 use std::path::PathBuf;
@@ -28,7 +28,10 @@ pub fn execute(args: InfoArgs) -> Result<(), Box<dyn std::error::Error>> {
     match SigningBlock::from_reader(reader, file_len, 0) {
         Ok(sig_block) => {
             println!("✓ 找到 KSU 签名块");
-            println!("  位置: {} - {}", sig_block.file_offset_start, sig_block.file_offset_end);
+            println!(
+                "  位置: {} - {}",
+                sig_block.file_offset_start, sig_block.file_offset_end
+            );
             println!("  大小: {} 字节", sig_block.size_of_block_start + 8);
             println!();
 

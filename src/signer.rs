@@ -31,11 +31,7 @@ pub struct ModuleSignerConfig {
 
 impl ModuleSignerConfig {
     /// Create a new signer config
-    pub const fn new(
-        private_key: PrivateKey,
-        certificate: Vec<u8>,
-        algorithm: Algorithms,
-    ) -> Self {
+    pub const fn new(private_key: PrivateKey, certificate: Vec<u8>, algorithm: Algorithms) -> Self {
         Self {
             private_key,
             certificate,
@@ -109,9 +105,7 @@ impl V2Signer {
 
         // Get the raw bytes of signed data for signing (without the size prefix)
         let signed_data_bytes = signed_data.to_u8();
-        let data_to_sign = signed_data_bytes
-            .get(4..)
-            .ok_or("Invalid signed data")?;
+        let data_to_sign = signed_data_bytes.get(4..).ok_or("Invalid signed data")?;
 
         // Sign the data
         let signature_bytes = self
@@ -190,7 +184,8 @@ impl SourceStampSigner {
     /// Returns an error if signing fails
     pub fn sign(&self, digests: Digests) -> Result<SourceStamp, String> {
         // Create certificates
-        let certificates = Certificates::new(vec![Certificate::new(self.config.certificate.clone())]);
+        let certificates =
+            Certificates::new(vec![Certificate::new(self.config.certificate.clone())]);
 
         // Create additional attributes
         let mut additional_attrs_data = Vec::new();
@@ -216,9 +211,7 @@ impl SourceStampSigner {
 
         // Get the raw bytes of signed data for signing
         let signed_data_bytes = signed_data.to_u8();
-        let data_to_sign = signed_data_bytes
-            .get(4..)
-            .ok_or("Invalid signed data")?;
+        let data_to_sign = signed_data_bytes.get(4..).ok_or("Invalid signed data")?;
 
         // Sign the data
         let signature_bytes = self
@@ -386,9 +379,9 @@ impl ModuleSigner {
         let stamp_block = stamp_signer.sign(digests)?;
 
         // Remove existing source stamp if present
-        existing_block.content.retain(|block| {
-            !matches!(block, ValueSigningBlock::SourceStampBlock(_))
-        });
+        existing_block
+            .content
+            .retain(|block| !matches!(block, ValueSigningBlock::SourceStampBlock(_)));
 
         // Add new source stamp
         existing_block
@@ -403,6 +396,8 @@ impl ModuleSigner {
 }
 
 /// Clone a private key (workaround since PrivateKey doesn't implement Clone)
+/// # Errors
+/// Returns an error if the key cannot be cloned
 fn clone_private_key(key: &PrivateKey) -> Result<PrivateKey, String> {
     match key {
         PrivateKey::EcdsaP256(k) => {

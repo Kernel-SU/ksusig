@@ -42,7 +42,7 @@ pub struct SourceStamp {
 
 impl SourceStamp {
     /// Create a new source stamp
-    pub fn new(stamp_block: StampBlock) -> Self {
+    pub const fn new(stamp_block: StampBlock) -> Self {
         Self {
             // size = ID (4 bytes) + stamp_block.size field (4 bytes) + stamp_block content
             size: std::mem::size_of::<u32>() + std::mem::size_of::<u32>() + stamp_block.size,
@@ -68,8 +68,12 @@ impl SourceStamp {
     /// Serialize to u8
     pub fn to_u8(&self) -> Vec<u8> {
         let content = self.stamp_block.to_u8();
-        [(self.size as u64).to_le_bytes().to_vec(), self.id.to_le_bytes().to_vec(), content]
-            .concat()
+        [
+            (self.size as u64).to_le_bytes().to_vec(),
+            self.id.to_le_bytes().to_vec(),
+            content,
+        ]
+        .concat()
     }
 }
 
@@ -92,10 +96,13 @@ pub struct StampBlock {
 
 impl StampBlock {
     /// Create a new stamp block
-    pub fn new(signed_data: SignedData, signatures: Signatures, public_key: PubKey) -> Self {
-        let size = mem::size_of::<u32>() + signed_data.size()
-            + mem::size_of::<u32>() + signatures.size
-            + mem::size_of::<u32>() + public_key.size;
+    pub const fn new(signed_data: SignedData, signatures: Signatures, public_key: PubKey) -> Self {
+        let size = mem::size_of::<u32>()
+            + signed_data.size()
+            + mem::size_of::<u32>()
+            + signatures.size
+            + mem::size_of::<u32>()
+            + public_key.size;
         Self {
             size,
             signed_data,
@@ -199,7 +206,7 @@ impl SignedData {
     }
 
     /// Size of the signed data
-    pub fn size(&self) -> usize {
+    pub const fn size(&self) -> usize {
         self.digests.size
             + self.certificates.size
             + self.additional_attributes.size
@@ -264,7 +271,8 @@ impl SourceStampSigner {
     /// Returns an error if signing fails
     pub fn sign(&self, digests: Digests) -> Result<SourceStamp, String> {
         // Create certificates from the signer's certificate
-        let certificates = Certificates::new(vec![Certificate::new(self.config.certificate.clone())]);
+        let certificates =
+            Certificates::new(vec![Certificate::new(self.config.certificate.clone())]);
 
         // Create additional attributes
         let mut additional_attrs_data = Vec::new();
@@ -295,12 +303,13 @@ impl SourceStampSigner {
         // Get the raw bytes of signed data for signing (without the size prefix)
         let signed_data_bytes = signed_data.to_u8();
         // Skip the first 4 bytes (size prefix) when signing
-        let data_to_sign = signed_data_bytes
-            .get(4..)
-            .ok_or("Invalid signed data")?;
+        let data_to_sign = signed_data_bytes.get(4..).ok_or("Invalid signed data")?;
 
         // Sign the data
-        let signature_bytes = self.config.algorithm.sign(&self.config.private_key, data_to_sign)?;
+        let signature_bytes = self
+            .config
+            .algorithm
+            .sign(&self.config.private_key, data_to_sign)?;
 
         // Create signatures
         let signatures = Signatures::new(vec![Signature::new(
@@ -331,7 +340,10 @@ impl SourceStampSigner {
     ///
     /// # Errors
     /// Returns an error if signing fails
-    pub fn sign_with_digests(&self, digest_pairs: Vec<(Algorithms, Vec<u8>)>) -> Result<SourceStamp, String> {
+    pub fn sign_with_digests(
+        &self,
+        digest_pairs: Vec<(Algorithms, Vec<u8>)>,
+    ) -> Result<SourceStamp, String> {
         let digests_data: Vec<Digest> = digest_pairs
             .into_iter()
             .map(|(algo, digest)| Digest::new(algo, digest))

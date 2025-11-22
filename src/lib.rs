@@ -68,7 +68,9 @@ pub use keystore::{
 
 // Signer exports
 #[cfg(feature = "signing")]
-pub use signer::{ModuleSigner, ModuleSignerConfig, SourceStampSigner as NewSourceStampSigner, V2Signer};
+pub use signer::{
+    ModuleSigner, ModuleSignerConfig, SourceStampSigner as NewSourceStampSigner, V2Signer,
+};
 
 // Verify exports
 #[cfg(feature = "verify")]

@@ -84,45 +84,40 @@ impl Module {
     pub fn verify(&self) -> Result<(), String> {
         let signing_block = self.get_signing_block().map_err(|e| e.to_string())?;
         for block in signing_block.content {
-            match block {
-                ValueSigningBlock::SignatureSchemeV2Block(v2) => {
-                    let len_signer = v2.signers.signers_data.len();
-                    if len_signer == 0 {
-                        return Err("No signer found".to_string());
+            if let ValueSigningBlock::SignatureSchemeV2Block(v2) = block {
+                let len_signer = v2.signers.signers_data.len();
+                if len_signer == 0 {
+                    return Err("No signer found".to_string());
+                }
+                for idx in 0..len_signer {
+                    let signer = match v2.signers.signers_data.get(idx) {
+                        Some(signer) => signer,
+                        None => return Err("No signer found".to_string()),
+                    };
+                    let pubkey = &signer.pub_key.data;
+                    let signer_data = &signer.signed_data.to_u8();
+                    let raw_data = match signer_data.get(4..) {
+                        Some(data) => data,
+                        None => return Err("Invalid signed data".to_string()),
+                    };
+                    if signer.signatures.signatures_data.is_empty() {
+                        return Err("No signature found".to_string());
                     }
-                    for idx in 0..len_signer {
-                        let signer = match v2.signers.signers_data.get(idx) {
-                            Some(signer) => signer,
-                            None => return Err("No signer found".to_string()),
+                    for (idx_sig, signature) in signer.signatures.signatures_data.iter().enumerate()
+                    {
+                        let signature = &signature.signature;
+                        let digest = match signer.signed_data.digests.digests_data.get(idx_sig) {
+                            Some(digest) => digest,
+                            None => return Err("No digest found".to_string()),
                         };
-                        let pubkey = &signer.pub_key.data;
-                        let signer_data = &signer.signed_data.to_u8();
-                        let raw_data = match signer_data.get(4..) {
-                            Some(data) => data,
-                            None => return Err("Invalid signed data".to_string()),
-                        };
-                        if signer.signatures.signatures_data.is_empty() {
-                            return Err("No signature found".to_string());
-                        }
-                        for (idx_sig, signature) in
-                            signer.signatures.signatures_data.iter().enumerate()
-                        {
-                            let signature = &signature.signature;
-                            let digest = match signer.signed_data.digests.digests_data.get(idx_sig)
-                            {
-                                Some(digest) => digest,
-                                None => return Err("No digest found".to_string()),
-                            };
-                            let algo = &digest.signature_algorithm_id;
+                        let algo = &digest.signature_algorithm_id;
 
-                            match algo.verify(pubkey, raw_data, signature) {
-                                Ok(_) => {}
-                                Err(e) => return Err(e),
-                            }
+                        match algo.verify(pubkey, raw_data, signature) {
+                            Ok(_) => {}
+                            Err(e) => return Err(e),
                         }
                     }
                 }
-                _ => {}
             }
         }
         Ok(())
@@ -223,7 +218,8 @@ impl Module {
                 }
             };
 
-        let module_without_signature = [start_without_sig, end_without_sig, &eocd_serialized].concat();
+        let module_without_signature =
+            [start_without_sig, end_without_sig, &eocd_serialized].concat();
 
         Ok(module_without_signature)
     }

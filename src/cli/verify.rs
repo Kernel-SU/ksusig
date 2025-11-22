@@ -1,7 +1,7 @@
 //! Verify command - Verify module signatures
 
-use modsig::{Module, SignatureVerifier, TrustedRoots};
 use clap::Args;
+use modsig::{Module, SignatureVerifier, TrustedRoots};
 use std::fs;
 use std::path::PathBuf;
 
@@ -43,7 +43,8 @@ pub fn execute(args: VerifyArgs) -> Result<(), Box<dyn std::error::Error>> {
         let root_pem = fs::read(&root_path)?;
 
         let mut roots = TrustedRoots::new();
-        roots.add_root_pem(&root_pem)
+        roots
+            .add_root_pem(&root_pem)
             .map_err(|e| format!("无法加载根证书: {}", e))?;
 
         println!("✓ 使用自定义根证书: {}", root_path.display());
@@ -103,7 +104,7 @@ pub fn execute(args: VerifyArgs) -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // 总体结果
-    if v2_result.is_some() && v2_result.as_ref().map_or(false, |r| r.signature_valid) {
+    if v2_result.is_some() && v2_result.as_ref().is_some_and(|r| r.signature_valid) {
         println!();
         println!("✓ 模块签名验证成功!");
         Ok(())
@@ -111,4 +112,3 @@ pub fn execute(args: VerifyArgs) -> Result<(), Box<dyn std::error::Error>> {
         Err("模块签名验证失败".into())
     }
 }
-

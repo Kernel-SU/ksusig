@@ -52,7 +52,7 @@ pub struct RawData {
 
 impl RawData {
     /// Create a new RawData
-    pub fn new(id: u32, data: Vec<u8>) -> Self {
+    pub const fn new(id: u32, data: Vec<u8>) -> Self {
         let size = mem::size_of::<u32>() + data.len();
         Self { size, id, data }
     }
@@ -89,7 +89,7 @@ impl ValueSigningBlock {
     }
 
     /// Create a new ValueSigningBlock::SourceStampBlock
-    pub fn new_source_stamp(stamp_block: StampBlock) -> Self {
+    pub const fn new_source_stamp(stamp_block: StampBlock) -> Self {
         Self::SourceStampBlock(SourceStamp::new(stamp_block))
     }
 
@@ -148,9 +148,9 @@ impl ValueSigningBlock {
                 SIGNATURE_SCHEME_V2_BLOCK_ID => Self::SignatureSchemeV2Block(
                     SignatureSchemeV2::parse(pair_size, pair_id, block_value)?,
                 ),
-                SOURCE_STAMP_BLOCK_ID => Self::SourceStampBlock(
-                    SourceStamp::parse(pair_size, pair_id, block_value)?,
-                ),
+                SOURCE_STAMP_BLOCK_ID => {
+                    Self::SourceStampBlock(SourceStamp::parse(pair_size, pair_id, block_value)?)
+                }
                 VERITY_PADDING_BLOCK_ID => {
                     add_space!(4);
                     print_string!("Padding Block of {} bytes", block_value.len());
@@ -232,7 +232,7 @@ impl SigningBlock {
     }
 
     /// Get mutable reference to content blocks
-    pub fn content_mut(&mut self) -> &mut Vec<ValueSigningBlock> {
+    pub const fn content_mut(&mut self) -> &mut Vec<ValueSigningBlock> {
         &mut self.content
     }
 
@@ -242,10 +242,7 @@ impl SigningBlock {
     pub fn new_with_padding(content: Vec<ValueSigningBlock>) -> Result<Self, std::io::Error> {
         for c in &content {
             if c.id() == VERITY_PADDING_BLOCK_ID {
-                return Err(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    "Error: Padding block already exists",
-                ));
+                return Err(std::io::Error::other("Error: Padding block already exists"));
             }
         }
         let content_size = content.iter().fold(0, |acc, x| acc + x.size());
@@ -259,8 +256,7 @@ impl SigningBlock {
                 {
                     Some(v) => v,
                     None => {
-                        return Err(std::io::Error::new(
-                            std::io::ErrorKind::Other,
+                        return Err(std::io::Error::other(
                             format!(
                                 "Error: remaining size {} is too low to add padding block - try to manually pad the inner block",
                                 4096 - v - mem::size_of::<u32>() - mem::size_of::<u64>()
@@ -278,7 +274,7 @@ impl SigningBlock {
         let size = new_content.iter().fold(0, |acc, x| acc + x.size());
         let size = size + SIZE_UINT64 + MAGIC_LEN;
         let total_size = SIZE_UINT64 + size;
-        debug_assert!(total_size % 4096 == 0);
+        debug_assert!(total_size.is_multiple_of(4096));
         Ok(Self {
             file_offset_start: 0,
             file_offset_end: total_size,
@@ -315,8 +311,7 @@ impl SigningBlock {
                         {
                             Some(v) => v,
                             None => {
-                                return Err(std::io::Error::new(
-                                    std::io::ErrorKind::Other,
+                                return Err(std::io::Error::other(
                                     format!(
                                         "Error: starting at {} is less than {} (block size + size of u64)",
                                         file_len - idx + MAGIC_LEN, block_size + SIZE_UINT64
@@ -332,10 +327,10 @@ impl SigningBlock {
                         let mut sig = match Self::parse_full_block(&vec_full_block) {
                             Ok(v) => v,
                             Err(e) => {
-                                return Err(std::io::Error::new(
-                                    std::io::ErrorKind::Other,
-                                    format!("Error parsing full block: {}", e),
-                                ));
+                                return Err(std::io::Error::other(format!(
+                                    "Error parsing full block: {}",
+                                    e
+                                )));
                             }
                         };
                         sig.file_offset_start = file_offset_start;
@@ -345,22 +340,19 @@ impl SigningBlock {
                     }
                 }
                 Err(_) => {
-                    return Err(std::io::Error::new(
-                        std::io::ErrorKind::Other,
-                        format!("Error reading file, {}", file_len - idx),
-                    ));
+                    return Err(std::io::Error::other(format!(
+                        "Error reading file, {}",
+                        file_len - idx
+                    )));
                 }
             }
         }
 
-        Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            format!(
-                "from_reader(): Magic not found\nMAGIC is '{:?}' (as [u8]) or '{}' (as string)",
-                MAGIC,
-                String::from_utf8_lossy(MAGIC)
-            ),
-        ))
+        Err(std::io::Error::other(format!(
+            "from_reader(): Magic not found\nMAGIC is '{:?}' (as [u8]) or '{}' (as string)",
+            MAGIC,
+            String::from_utf8_lossy(MAGIC)
+        )))
     }
 
     /// Parse the KSU Signing Block from a byte array
@@ -550,7 +542,7 @@ impl SigningBlock {
     }
 
     /// Offset the block by a certain amount
-    pub fn offset_by(&mut self, offset: usize) {
+    pub const fn offset_by(&mut self, offset: usize) {
         self.file_offset_start += offset;
         self.file_offset_end += offset;
     }

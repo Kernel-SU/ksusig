@@ -1,11 +1,12 @@
 //! Sign command - Sign module files
 
+use clap::Args;
 use modsig::{
     common::{Digest, Digests},
-    digest_module, load_p12, load_pem, zip::find_eocd, Algorithms, ModuleSigner,
-    ModuleSignerConfig,
+    digest_module, load_p12, load_pem,
+    zip::find_eocd,
+    Algorithms, ModuleSigner, ModuleSignerConfig,
 };
-use clap::Args;
 use std::fs::{File, OpenOptions};
 use std::io::{copy, BufReader, BufWriter, Read, Seek, SeekFrom, Write};
 use std::path::PathBuf;
@@ -69,19 +70,13 @@ pub fn execute(args: SignArgs) -> Result<(), Box<dyn std::error::Error>> {
     let v2_creds = if let Some(p12_path) = args.p12 {
         // 从 P12 加载
         let password = args.password.ok_or("P12 格式需要密码 (--password)")?;
-        let p12_str = p12_path
-            .to_str()
-            .ok_or("无效的 P12 文件路径")?;
+        let p12_str = p12_path.to_str().ok_or("无效的 P12 文件路径")?;
         load_p12(p12_str, &password)?
     } else if let Some(key_path) = args.key {
         // 从 PEM 加载
         let cert_path = args.cert.ok_or("使用 --key 时需要 --cert")?;
-        let key_str = key_path
-            .to_str()
-            .ok_or("无效的密钥文件路径")?;
-        let cert_str = cert_path
-            .to_str()
-            .ok_or("无效的证书文件路径")?;
+        let key_str = key_path.to_str().ok_or("无效的密钥文件路径")?;
+        let cert_str = cert_path.to_str().ok_or("无效的证书文件路径")?;
         load_pem(key_str, cert_str, args.password.as_deref())?
     } else {
         return Err("必须指定 --key/--cert 或 --p12".into());
@@ -108,11 +103,7 @@ pub fn execute(args: SignArgs) -> Result<(), Box<dyn std::error::Error>> {
         let cert_str = stamp_cert
             .to_str()
             .ok_or("无效的 Source Stamp 证书文件路径")?;
-        Some(load_pem(
-            key_str,
-            cert_str,
-            args.stamp_password.as_deref(),
-        )?)
+        Some(load_pem(key_str, cert_str, args.stamp_password.as_deref())?)
     } else {
         None
     };
