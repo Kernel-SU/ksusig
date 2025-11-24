@@ -93,7 +93,10 @@ impl TrustedRoots {
 
         // Add KernelSU Root CA P-384
         if let Err(e) = roots.add_root_pem(KERNELSU_ROOT_CA_P384.as_bytes()) {
-            eprintln!("Warning: Failed to load built-in KernelSU Root CA P-384: {}", e);
+            eprintln!(
+                "Warning: Failed to load built-in KernelSU Root CA P-384: {}",
+                e
+            );
         }
 
         roots

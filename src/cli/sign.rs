@@ -69,7 +69,9 @@ pub fn execute(args: SignArgs) -> Result<(), Box<dyn std::error::Error>> {
     // Load V2 signature credentials
     let v2_creds = if let Some(p12_path) = args.p12 {
         // Load from P12
-        let password = args.password.ok_or("P12 format requires password (--password)")?;
+        let password = args
+            .password
+            .ok_or("P12 format requires password (--password)")?;
         let p12_str = p12_path.to_str().ok_or("Invalid P12 file path")?;
         load_p12(p12_str, &password)?
     } else if let Some(key_path) = args.key {
@@ -168,7 +170,10 @@ pub fn execute(args: SignArgs) -> Result<(), Box<dyn std::error::Error>> {
     let signing_block = signer.sign(digests)?;
     let signing_block_bytes = signing_block.to_u8();
     let signing_block_size = signing_block_bytes.len();
-    println!("✓ Signing complete (signing block size: {} bytes)", signing_block_size);
+    println!(
+        "✓ Signing complete (signing block size: {} bytes)",
+        signing_block_size
+    );
 
     // Write output file
     println!("Writing signed module...");

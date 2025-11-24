@@ -2,7 +2,7 @@
 name = "modsig"
 version = "0.3.0"
 edition = "2021"
-description = "Decoding the KSU Signing Block"
+description = "KernelSU Module Signature Tooling Library and CLI"
 documentation = "https://docs.rs/modsig"
 license = "MIT"
 readme = "./README.md"

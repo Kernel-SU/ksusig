@@ -2,14 +2,16 @@
 
 [简体中文](README_CN.md) | English
 
-A Rust library and CLI tool for decoding and extracting KernelSU Module signing blocks.
+A Rust library and CLI tool for decoding, inspecting, signing and verifying KernelSU Module signing blocks.
 
 ## Features
 
-- **Module Signature Scheme V2** - Standard Android signature verification
-- **Source Stamp** - Module source stamp signature verification
-- **ECDSA Only** - Supports only ECDSA algorithms (P-256 and P-384 curves)
-- **Custom Signing Block** - Uses `KSU Sig Block 42` magic (instead of standard APK signing block)
+- **Signature Scheme V2**: Android-style module signature decoding & verification.
+- **Source Stamp**: Stamp parsing and verification.
+- **Certificate chain**: Validation plus trust check via built-in KernelSU Root CA (P-384) or custom roots.
+- **Detailed certificate info**: CLI shows subject/issuer/validity, chain length, trust result.
+- **ECDSA only**: P-256 (0x0201) & P-384 (0x0202).
+- **Custom block**: Uses `KSU Sig Block 42` magic instead of the APK block.
 
 ## Installation
 
@@ -22,40 +24,36 @@ cargo install --path .
 ### CLI Tool
 
 ```sh
-# View Module signature information
-modsig module.zip
-
-# Verify signature
+# Quick verify
 modsig verify module.zip
+# Verbose (shows certificate details, chain/trust)
+modsig verify module.zip -v
+# Verify with custom root CA
+modsig verify module.zip --root my_root.pem
 
-# Show detailed information
+# Show parsed signing block + certificate details
 modsig info module.zip
 ```
 
 ### Rust Library
 
 ```toml
-[dependencies]
-modsig = { path = ".", default-features = false, features = ["signing", "serde"] }
+[dependencies] # adjust features as needed
+modsig = { path = ".", default-features = false, features = ["signing", "serde", "verify"] }
 ```
 
 Example code:
 
 ```rust
-use modsig::Module;
+use modsig::{Module, SignatureVerifier};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let module = Module::from_path("module.zip")?;
-
-    // Get signing block
-    if let Some(signing_block) = &module.signing_block {
-        println!("Signing block size: {} bytes", signing_block.size);
-
-        // Iterate through signatures
-        for value_block in &signing_block.value_signing_blocks {
-            println!("Signature type: {:?}", value_block);
-        }
-    }
+    let module = Module::new("module.zip".into())?;
+    let signing_block = module.get_signing_block()?;
+    let verifier = SignatureVerifier::with_builtin_roots();
+    let result = verifier.verify_v2(&signing_block)?;
+    println!("Signature valid: {}", result.signature_valid);
+    println!("Trusted by built-in roots: {}", result.is_trusted);
 
     Ok(())
 }
@@ -63,22 +61,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ## Supported Signature Algorithms
 
-This project **supports ECDSA only**, RSA and DSA are NOT supported:
+This project **supports ECDSA only** (RSA/DSA unsupported):
 
-- `ECDSA_SHA2_256` (0x0201) - ECDSA with P-256 curve and SHA-256
-- `ECDSA_SHA2_512` (0x0202) - ECDSA with P-384 curve and SHA-512
+- `ECDSA_SHA2_256` (0x0201) — ECDSA P-256 + SHA-256
+- `ECDSA_SHA2_512` (0x0202) — ECDSA P-384 + SHA-512
 
 ## Feature Flags
 
 ```toml
 # Default features
-default = ["directprint", "serde", "hash", "signing"]
+default = ["directprint", "serde", "hash", "signing", "keystore", "verify"]
 
 # Optional features
-signing     # Signature verification (requires hash, p256, p384)
-serde       # Serialization support
-hash        # Certificate hash functions (md5, sha1, sha256)
-directprint # Print signing block info during parsing
+signing      # Signature encode/verify (ECDSA P-256/P-384)
+serde        # Serialization support
+hash         # Hash helpers (md5, sha1, sha256)
+directprint  # Print signing block while parsing
+keystore     # Load keys/certs from PEM/P12
+verify       # Certificate chain parsing/issuer matching
 ```
 
 Disable default features:
@@ -97,7 +97,7 @@ cargo build
 cargo build --release
 
 # Run tests
-cargo test
+cargo test --release --tests
 
 # Run clippy
 cargo clippy

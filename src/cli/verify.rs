@@ -88,7 +88,10 @@ pub fn execute(args: VerifyArgs) -> Result<(), Box<dyn std::error::Error>> {
                     );
                 }
                 if !result.cert_chain.is_empty() {
-                    println!("  Certificate chain: {} certificate(s)", result.cert_chain.len());
+                    println!(
+                        "  Certificate chain: {} certificate(s)",
+                        result.cert_chain.len()
+                    );
                     for line in describe_chain(&result.cert_chain) {
                         println!("    {}", line);
                     }

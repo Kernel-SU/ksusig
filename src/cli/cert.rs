@@ -16,7 +16,10 @@ pub fn describe_certificate(cert_der: &[u8]) -> String {
                 subject, issuer, not_before, not_after
             )
         }
-        Err(_) => format!("certificate: {} bytes (failed to parse DER)", cert_der.len()),
+        Err(_) => format!(
+            "certificate: {} bytes (failed to parse DER)",
+            cert_der.len()
+        ),
     }
 }
 
@@ -25,6 +28,13 @@ pub fn describe_chain(chain: &[Vec<u8>]) -> Vec<String> {
     chain
         .iter()
         .enumerate()
-        .map(|(idx, cert)| format!("Chain[{}]: {} bytes; {}", idx, cert.len(), describe_certificate(cert)))
+        .map(|(idx, cert)| {
+            format!(
+                "Chain[{}]: {} bytes; {}",
+                idx,
+                cert.len(),
+                describe_certificate(cert)
+            )
+        })
         .collect()
 }

@@ -206,9 +206,7 @@ fn parse_certificate_pem(pem_data: &[u8]) -> Result<Vec<u8>, KeystoreError> {
 ///
 /// # Errors
 /// Returns an error if no valid certificates are found
-fn parse_certificate_chain_pem(
-    pem_data: &[u8],
-) -> Result<(Vec<u8>, Vec<Vec<u8>>), KeystoreError> {
+fn parse_certificate_chain_pem(pem_data: &[u8]) -> Result<(Vec<u8>, Vec<Vec<u8>>), KeystoreError> {
     // Try to parse multiple PEM blocks
     match pem::parse_many(pem_data) {
         Ok(pem_blocks) => {
