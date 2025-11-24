@@ -16,7 +16,7 @@
 ## 安装
 
 ```sh
-cargo install --path .
+cargo install --git https://github.com/Kernel-SU/modsig
 ```
 
 ## 使用

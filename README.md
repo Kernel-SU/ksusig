@@ -16,7 +16,7 @@ A Rust library and CLI tool for decoding, inspecting, signing and verifying Kern
 ## Installation
 
 ```sh
-cargo install --path .
+cargo install --git https://github.com/Kernel-SU/modsig
 ```
 
 ## Usage
