@@ -99,9 +99,13 @@ pub fn load_pem(
 
 /// Load signer credentials from PEM bytes
 ///
+/// Supports both single certificate and certificate chain files.
+/// If multiple certificates are present, the first is used as the end-entity
+/// certificate and the rest are stored as the certificate chain.
+///
 /// # Arguments
 /// * `key_pem` - Private key in PEM format
-/// * `cert_pem` - Certificate in PEM format
+/// * `cert_pem` - Certificate or certificate chain in PEM format
 /// * `password` - Optional password for encrypted private key
 ///
 /// # Errors
@@ -114,14 +118,14 @@ pub fn load_pem_from_bytes(
     // Parse the private key
     let (private_key, algorithm) = parse_private_key_pem(key_pem, password)?;
 
-    // Parse the certificate
-    let certificate = parse_certificate_pem(cert_pem)?;
+    // Parse certificate chain (supports multiple certificates)
+    let (certificate, cert_chain) = parse_certificate_chain_pem(cert_pem)?;
 
     Ok(SignerCredentials::new(
         private_key,
         certificate,
         algorithm,
-        Vec::new(),
+        cert_chain,
     ))
 }
 
@@ -185,6 +189,63 @@ fn parse_certificate_pem(pem_data: &[u8]) -> Result<Vec<u8>, KeystoreError> {
     }
 
     Ok(pem.into_contents())
+}
+
+/// Parse certificate chain from PEM format
+///
+/// Supports both single certificate and certificate chain files.
+/// Returns (end_entity_cert, intermediate_certs)
+///
+/// # Arguments
+/// * `pem_data` - PEM data containing one or more certificates
+///
+/// # Returns
+/// A tuple of (end_entity_certificate, certificate_chain) where:
+/// - end_entity_certificate: The first certificate (signer's certificate)
+/// - certificate_chain: All subsequent certificates (intermediate CAs, root CA)
+///
+/// # Errors
+/// Returns an error if no valid certificates are found
+fn parse_certificate_chain_pem(
+    pem_data: &[u8],
+) -> Result<(Vec<u8>, Vec<Vec<u8>>), KeystoreError> {
+    // Try to parse multiple PEM blocks
+    match pem::parse_many(pem_data) {
+        Ok(pem_blocks) => {
+            if pem_blocks.is_empty() {
+                return Err(KeystoreError::CertError(
+                    "No certificates found in PEM data".to_string(),
+                ));
+            }
+
+            // Filter for CERTIFICATE blocks only
+            let certs: Vec<Vec<u8>> = pem_blocks
+                .into_iter()
+                .filter(|pem| pem.tag() == "CERTIFICATE")
+                .map(pem::Pem::into_contents)
+                .collect();
+
+            if certs.is_empty() {
+                return Err(KeystoreError::CertError(
+                    "No valid CERTIFICATE blocks found".to_string(),
+                ));
+            }
+
+            // First cert is the end-entity, rest are intermediates/chain
+            let end_entity = certs
+                .first()
+                .ok_or_else(|| KeystoreError::CertError("No certificates found".to_string()))?
+                .clone();
+            let chain: Vec<Vec<u8>> = certs.into_iter().skip(1).collect();
+
+            Ok((end_entity, chain))
+        }
+        Err(_) => {
+            // Fallback: try to parse as single certificate
+            let cert = parse_certificate_pem(pem_data)?;
+            Ok((cert, Vec::new()))
+        }
+    }
 }
 
 /// Load signer credentials from a P12/PKCS12 keystore file

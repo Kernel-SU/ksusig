@@ -3,9 +3,9 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-/// Id of ECDSA with SHA2-256 digest
+/// Id of ECDSA P-256 with SHA2-256 digest
 pub const SIGNATURE_ECDSA_256: u32 = 0x0201;
-/// Id of ECDSA with SHA2-512 digest
+/// Id of ECDSA P-384 with SHA2-512 digest
 pub const SIGNATURE_ECDSA_512: u32 = 0x0202;
 
 /// Signature algorithms
@@ -54,8 +54,9 @@ impl PartialEq<Algorithms> for u32 {
 impl std::fmt::Display for Algorithms {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let str = match *self {
-            Self::ECDSA_SHA2_256 => "ECDSA with SHA2-256 digest",
-            Self::ECDSA_SHA2_512 => "ECDSA with SHA2-512 digest",
+            // 明确提示所用曲线
+            Self::ECDSA_SHA2_256 => "ECDSA P-256 with SHA2-256 digest",
+            Self::ECDSA_SHA2_512 => "ECDSA P-384 with SHA2-512 digest",
             Self::Unknown(u) => &format!("Unknown algorithm: 0x{:04x}", u),
         };
         write!(f, "{:#x} - {}", u32::from(self), str)

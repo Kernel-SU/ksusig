@@ -1,7 +1,7 @@
 //! Verify command - Verify module signatures
 
 use clap::Args;
-use modsig::{Module, SignatureVerifier, TrustedRoots};
+use modsig::{Module, SignatureVerifier, TrustedRoots, VerifyError};
 use std::fs;
 use std::path::PathBuf;
 
@@ -55,8 +55,21 @@ pub fn execute(args: VerifyArgs) -> Result<(), Box<dyn std::error::Error>> {
         SignatureVerifier::with_builtin_roots()
     };
 
-    // Verify all signatures
-    let (v2_result, stamp_result) = verifier.verify_all(&signing_block);
+    // Verify V2 signature
+    let v2_result = match verifier.verify_v2(&signing_block) {
+        Ok(r) => Some(r),
+        Err(VerifyError::NoSignature) => {
+            println!("ℹ V2 signature not found");
+            None
+        }
+        Err(e) => {
+            eprintln!("✗ V2 signature verification failed: {}", e);
+            return Err("V2 signature verification failed".into());
+        }
+    };
+
+    // Verify Source Stamp (if present)
+    let stamp_result = verifier.verify_source_stamp(&signing_block).ok();
 
     // Display V2 signature verification result
     match &v2_result {
@@ -70,9 +83,29 @@ pub fn execute(args: VerifyArgs) -> Result<(), Box<dyn std::error::Error>> {
                     if let Some(ref cert) = result.certificate {
                         println!("  Certificate size: {} bytes", cert.len());
                     }
+                    if !result.cert_chain.is_empty() {
+                        println!("  Certificate chain: {} certificate(s)", result.cert_chain.len());
+                        for (idx, chain_cert) in result.cert_chain.iter().enumerate() {
+                            println!("    Chain[{}]: {} bytes", idx, chain_cert.len());
+                        }
+                    } else {
+                        println!("  Certificate chain: none (self-signed or single cert)");
+                    }
+                    if !result.warnings.is_empty() {
+                        println!("  Warnings:");
+                        for warning in &result.warnings {
+                            println!("    ⚠ {}", warning);
+                        }
+                    }
                 }
             } else {
                 eprintln!("✗ V2 signature invalid");
+                if !result.warnings.is_empty() {
+                    eprintln!("  Errors:");
+                    for warning in &result.warnings {
+                        eprintln!("    • {}", warning);
+                    }
+                }
                 return Err("V2 signature verification failed".into());
             }
         }
