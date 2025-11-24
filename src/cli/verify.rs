@@ -104,6 +104,15 @@ pub fn execute(args: VerifyArgs) -> Result<(), Box<dyn std::error::Error>> {
                         println!("    ⚠ {}", warning);
                     }
                 }
+
+                if !result.cert_chain_valid {
+                    eprintln!("✗ Certificate chain invalid");
+                    return Err("Certificate chain invalid".into());
+                }
+                if !result.is_trusted {
+                    eprintln!("✗ Untrusted certificate: not signed by trusted root");
+                    return Err("Untrusted certificate".into());
+                }
             } else {
                 eprintln!("✗ V2 signature invalid");
                 if !result.warnings.is_empty() {
