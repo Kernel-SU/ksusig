@@ -28,6 +28,9 @@ webpki = { version = "0.22", optional = true }
 # CLI framework
 clap = { version = "4.5", features = ["derive", "cargo"] }
 base64 = "0.22"
+# ELF file support
+goblin = { version = "0.8", optional = true }
+scroll = { version = "0.12", optional = true }
 
 [dev-dependencies]
 # test serialization (note that serialization is used in web_demo)
@@ -43,10 +46,13 @@ rand = "0.8.0"
 # test issuer
 x509-parser = { version = "0.17.0" }
 
+# temp files for ELF tests
+tempfile = "3"
+
 [features]
 # by default, very opinionated features are enabled
 # used mostly for main.rs
-default = ["directprint", "serde", "hash", "signing", "keystore", "verify"]
+default = ["directprint", "serde", "hash", "signing", "keystore", "verify", "elf"]
 
 # verify the KSU Signing Block
 signing = ["hash", "dep:p256", "dep:p384"]
@@ -66,3 +72,6 @@ directprint = []
 # allows to calculate the hash of Certificate
 # provides the functions sha1_cert(), sha256_cert(), md5_cert() for the Certificate struct
 hash = ["dep:md5", "dep:sha1", "dep:sha2"]
+
+# ELF file format support
+elf = ["dep:goblin", "dep:scroll"]

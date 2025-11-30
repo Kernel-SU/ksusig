@@ -48,6 +48,10 @@ pub fn execute(args: InfoArgs) -> Result<(), Box<dyn std::error::Error>> {
                         modsig::ValueSigningBlock::SourceStampBlock(_) => {
                             println!("  ✓ Source Stamp");
                         }
+                        #[cfg(feature = "elf")]
+                        modsig::ValueSigningBlock::ElfSectionInfoBlock(info) => {
+                            println!("  ✓ ELF Section Info ({} section(s))", info.section_count);
+                        }
                         modsig::ValueSigningBlock::BaseSigningBlock(data) => {
                             println!("  • Unknown Block (ID: 0x{:x})", data.id);
                         }

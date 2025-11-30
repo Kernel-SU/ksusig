@@ -3,12 +3,12 @@
 use clap::Args;
 use modsig::{
     common::{Digest, Digests},
-    digest_module, load_p12, load_pem,
-    zip::find_eocd,
-    Algorithms, ModuleSigner, ModuleSignerConfig,
+    load_p12, load_pem, FileFormat, ModuleSigner, ModuleSignerConfig, SignableFile,
 };
-use std::fs::{File, OpenOptions};
-use std::io::{copy, BufReader, BufWriter, Read, Seek, SeekFrom, Write};
+#[cfg(feature = "elf")]
+use modsig::{signing_block::elf_section_info::ElfSectionInfo, ValueSigningBlock};
+use std::fs::File;
+use std::io::{BufWriter, Write};
 use std::path::PathBuf;
 
 /// Arguments for the sign command
@@ -53,6 +53,15 @@ pub struct SignArgs {
     /// Source Stamp P12 password
     #[arg(long = "stamp-password")]
     pub stamp_password: Option<String>,
+
+    /// ELF sections to sign (comma separated or repeated)
+    #[arg(
+        long = "elf-section",
+        value_name = "SECTION",
+        value_delimiter = ',',
+        num_args = 0..
+    )]
+    pub elf_sections: Vec<String>,
 }
 
 /// Execute the sign command
@@ -110,6 +119,9 @@ pub fn execute(args: SignArgs) -> Result<(), Box<dyn std::error::Error>> {
         println!("✓ Source Stamp key loaded");
     }
 
+    // Select algorithm based on V2 private key curve (before moving v2_creds)
+    let algorithm = v2_creds.algorithm.clone();
+
     // Create signer
     let signer = if let Some(stamp) = stamp_creds {
         ModuleSigner::with_source_stamp(
@@ -120,42 +132,38 @@ pub fn execute(args: SignArgs) -> Result<(), Box<dyn std::error::Error>> {
         ModuleSigner::v2_only(ModuleSignerConfig::from_credentials(v2_creds))
     };
 
-    // Read input file
-    let mut input_file = File::open(&args.input)?;
-    let input_len = input_file.metadata()?.len() as usize;
+    // Prepare signable target
+    let mut signable = SignableFile::open(&args.input)?;
 
-    // Find EOCD
-    let eocd = find_eocd(&mut input_file, input_len)?;
-    let cd_offset = eocd.cd_offset as usize;
-    let cd_size = eocd.cd_size as usize;
-    let eocd_offset = eocd.file_offset;
-    let eocd_size = input_len - eocd_offset;
+    #[cfg(feature = "elf")]
+    if !args.elf_sections.is_empty() {
+        signable.set_elf_sections(args.elf_sections.clone())?;
+    }
 
-    println!("✓ ZIP structure parsed");
-    println!("  Central Directory: {} bytes @ {}", cd_size, cd_offset);
-    println!("  EOCD: {} bytes @ {}", eocd_size, eocd_offset);
+    #[cfg(not(feature = "elf"))]
+    if !args.elf_sections.is_empty() {
+        return Err("ELF 支持未开启，无法使用 --elf-section".into());
+    }
 
-    // Build file offsets
-    let offsets = modsig::zip::FileOffsets {
-        start_content: 0,
-        stop_content: cd_offset,
-        start_cd: cd_offset,
-        stop_cd: eocd_offset,
-        start_eocd: eocd_offset,
-        stop_eocd: input_len,
-    };
+    match signable.format() {
+        FileFormat::Module => println!("✓ 检测到模块（ZIP）文件"),
+        #[cfg(feature = "elf")]
+        FileFormat::Elf => println!("✓ 检测到 ELF 文件"),
+    }
 
-    // Select algorithm based on V2 private key curve
-    let algorithm = v2_creds.algorithm.clone();
-    println!(
-        "ℹ 自动使用密钥曲线对应算法: {}",
-        algorithm
-    );
+    let regions = signable.digest_regions()?;
+    println!("待签名区域:");
+    for region in &regions {
+        println!(
+            "  - {} @ {} ({} bytes)",
+            region.name, region.offset, region.size
+        );
+    }
+    println!("ℹ 自动使用密钥曲线对应算法: {}", algorithm);
 
     // Calculate digests
     println!("Calculating digests...");
-    input_file.seek(SeekFrom::Start(0))?;
-    let digest = digest_module(&mut input_file, &offsets, &algorithm)?;
+    let digest = signable.digest(&algorithm)?;
     println!("✓ Digest calculation complete");
 
     // Create Digests
@@ -163,9 +171,24 @@ pub fn execute(args: SignArgs) -> Result<(), Box<dyn std::error::Error>> {
 
     // Sign
     println!("Signing...");
-    let signing_block = signer.sign(digests)?;
-    let signing_block_bytes = signing_block.to_u8();
-    let signing_block_size = signing_block_bytes.len();
+    let mut signing_block = signer.sign(digests)?;
+
+    #[cfg(feature = "elf")]
+    if let SignableFile::Elf(ref elf) = signable {
+        let sections = elf.resolved_sections()?;
+        let section_info = ElfSectionInfo::from_tuples(
+            sections
+                .iter()
+                .map(|(name, offset, size)| (name.as_str(), *offset, *size))
+                .collect(),
+        );
+        signing_block
+            .content
+            .push(ValueSigningBlock::ElfSectionInfoBlock(section_info));
+        signing_block.recalculate_size();
+    }
+
+    let signing_block_size = signing_block.to_u8().len();
     println!(
         "✓ Signing complete (signing block size: {} bytes)",
         signing_block_size
@@ -173,70 +196,12 @@ pub fn execute(args: SignArgs) -> Result<(), Box<dyn std::error::Error>> {
 
     // Write output file
     println!("Writing signed module...");
-    write_signed_module(
-        &args.input,
-        &args.output,
-        &signing_block_bytes,
-        cd_offset,
-        &eocd,
-    )?;
+    let mut writer = BufWriter::new(File::create(&args.output)?);
+    signable.write_with_signature(&mut writer, &signing_block)?;
+    writer.flush()?;
 
     println!("✓ Signing successful!");
     println!("Output file: {}", args.output.display());
-
-    Ok(())
-}
-
-/// Write signed module file
-fn write_signed_module(
-    input_path: &PathBuf,
-    output_path: &PathBuf,
-    signing_block: &[u8],
-    cd_offset: usize,
-    eocd: &modsig::zip::EndOfCentralDirectoryRecord,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let input_file = File::open(input_path)?;
-    let mut reader = BufReader::new(input_file);
-
-    let output_file = OpenOptions::new()
-        .write(true)
-        .create(true)
-        .truncate(true)
-        .open(output_path)?;
-    let mut writer = BufWriter::new(output_file);
-
-    // 1. Write ZIP content (from start to before Central Directory)
-    reader.seek(SeekFrom::Start(0))?;
-    let mut content_reader = reader.by_ref().take(cd_offset as u64);
-    copy(&mut content_reader, &mut writer)?;
-
-    // 2. Write signing block
-    writer.write_all(signing_block)?;
-
-    let new_cd_offset = cd_offset + signing_block.len();
-
-    // 3. Write Central Directory
-    reader.seek(SeekFrom::Start(cd_offset as u64))?;
-    let cd_size = (eocd.file_offset - cd_offset) as u64;
-    let mut cd_reader = reader.by_ref().take(cd_size);
-    copy(&mut cd_reader, &mut writer)?;
-
-    // 4. Write updated EOCD (update CD offset)
-    let new_eocd = modsig::zip::EndOfCentralDirectoryRecord {
-        file_offset: eocd.file_offset + signing_block.len(),
-        signature: eocd.signature,
-        disk_number: eocd.disk_number,
-        disk_with_cd: eocd.disk_with_cd,
-        num_entries: eocd.num_entries,
-        total_entries: eocd.total_entries,
-        cd_size: eocd.cd_size,
-        cd_offset: new_cd_offset as u32,
-        comment_len: eocd.comment_len,
-        comment: eocd.comment.clone(),
-    };
-
-    writer.write_all(&new_eocd.to_u8())?;
-    writer.flush()?;
 
     Ok(())
 }

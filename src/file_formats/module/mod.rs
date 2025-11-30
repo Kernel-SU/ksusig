@@ -1,18 +1,23 @@
 //! Handling the Module file by providing methods as `Module` struct.
 
+pub mod zip;
+
+#[cfg(feature = "hash")]
+pub mod digest;
+
 use std::{
     fs::{read, File},
     io::{copy, Read, Seek, Write},
     path::PathBuf,
 };
 
-use crate::{
-    zip::{find_eocd, EndOfCentralDirectoryRecord, FileOffsets},
-    SigningBlock,
-};
+use crate::SigningBlock;
+use zip::{find_eocd, EndOfCentralDirectoryRecord, FileOffsets};
 
 #[cfg(feature = "hash")]
-use crate::{digest_module, Algorithms};
+use crate::Algorithms;
+#[cfg(feature = "hash")]
+use digest::digest_module;
 
 #[cfg(feature = "signing")]
 use crate::ValueSigningBlock;

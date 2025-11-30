@@ -3,6 +3,7 @@
 use clap::{Parser, Subcommand};
 
 pub mod cert;
+pub mod digest;
 pub mod info;
 pub mod sign;
 pub mod verify;
@@ -28,6 +29,9 @@ pub enum Commands {
 
     /// Display signing block information
     Info(info::InfoArgs),
+
+    /// Calculate digest of signable regions
+    Digest(digest::DigestArgs),
 }
 
 impl Cli {
@@ -42,6 +46,7 @@ impl Cli {
             Commands::Sign(args) => sign::execute(*args),
             Commands::Verify(args) => verify::execute(args),
             Commands::Info(args) => info::execute(args),
+            Commands::Digest(args) => digest::execute(args),
         }
     }
 }

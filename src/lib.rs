@@ -26,10 +26,21 @@
 #![warn(clippy::multiple_crate_versions)]
 
 pub mod common;
-pub mod module;
+pub mod file_formats;
+pub mod signable;
 pub mod signing_block;
 pub mod utils;
-pub mod zip;
+
+// Backward compatibility: re-export old module paths
+pub mod module {
+    //! Module file handling (re-exported from file_formats::module)
+    pub use crate::file_formats::module::*;
+}
+
+pub mod zip {
+    //! ZIP file utilities (re-exported from file_formats::module::zip)
+    pub use crate::file_formats::module::zip::*;
+}
 
 // Conditional modules
 #[cfg(feature = "keystore")]
@@ -43,9 +54,10 @@ pub mod verifier;
 
 // re-export
 #[cfg(feature = "hash")]
-pub use signing_block::digest::digest_module;
+pub use file_formats::module::digest::digest_module;
 
-pub use module::Module;
+pub use file_formats::module::Module;
+pub use signable::{DigestRegion, FileFormat, Signable, SignableError, SignableFile};
 pub use signing_block::algorithms::Algorithms;
 #[cfg(feature = "signing")]
 pub use signing_block::algorithms::PrivateKey;

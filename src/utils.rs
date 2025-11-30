@@ -150,6 +150,28 @@ impl MyReader {
         Ok(temp as usize)
     }
 
+    /// Read a u16
+    /// # Errors
+    /// Returns a string if the parsing fails.
+    pub(crate) fn read_u16(&mut self) -> Result<u16, String> {
+        let buf = match self.data.get(self.pos..self.pos + 2) {
+            Some(buf) => {
+                let mut buffer = [0; 2];
+                buffer.copy_from_slice(buf);
+                buffer
+            }
+            None => {
+                return Err(format!(
+                    "Error: out of bounds reading u16 between {} and {}",
+                    self.pos,
+                    self.pos + 2
+                ));
+            }
+        };
+        self.pos += 2;
+        Ok(u16::from_le_bytes([buf[0], buf[1]]))
+    }
+
     /// Read a u32
     /// # Errors
     /// Returns a string if the parsing fails.
@@ -184,9 +206,9 @@ impl MyReader {
             }
             None => {
                 return Err(format!(
-                    "Error: out of bounds reading u64{} and {}",
+                    "Error: out of bounds reading u64 between {} and {}",
                     self.pos,
-                    self.pos + 4
+                    self.pos + 8
                 ));
             }
         };

@@ -14,12 +14,17 @@ pub mod digest;
 pub mod scheme_v2;
 pub mod source_stamp;
 
+#[cfg(feature = "elf")]
+pub mod elf_section_info;
+
 use crate::utils::create_fixed_buffer_8;
 #[cfg(feature = "directprint")]
 use crate::utils::MagicNumberDecoder;
 
 use crate::utils::print_string;
 use crate::utils::{add_space, MyReader};
+#[cfg(feature = "elf")]
+use elf_section_info::{ElfSectionInfo, ELF_SECTION_INFO_BLOCK_ID};
 use scheme_v2::{SignatureSchemeV2, Signers as SignersV2, SIGNATURE_SCHEME_V2_BLOCK_ID};
 use source_stamp::{SourceStamp, StampBlock, SOURCE_STAMP_BLOCK_ID};
 
@@ -80,6 +85,10 @@ pub enum ValueSigningBlock {
 
     /// Source Stamp
     SourceStampBlock(SourceStamp),
+
+    /// ELF Section Info
+    #[cfg(feature = "elf")]
+    ElfSectionInfoBlock(ElfSectionInfo),
 }
 
 impl ValueSigningBlock {
@@ -99,6 +108,8 @@ impl ValueSigningBlock {
             Self::BaseSigningBlock(ref block) => block.id,
             Self::SignatureSchemeV2Block(ref scheme) => scheme.id,
             Self::SourceStampBlock(ref stamp) => stamp.id,
+            #[cfg(feature = "elf")]
+            Self::ElfSectionInfoBlock(ref info) => info.id,
         }
     }
 
@@ -108,6 +119,8 @@ impl ValueSigningBlock {
             Self::BaseSigningBlock(ref block) => block.size,
             Self::SignatureSchemeV2Block(ref scheme) => scheme.size,
             Self::SourceStampBlock(ref stamp) => stamp.size,
+            #[cfg(feature = "elf")]
+            Self::ElfSectionInfoBlock(ref info) => info.size,
         }
     }
 
@@ -143,29 +156,34 @@ impl ValueSigningBlock {
         let block_value = &mut data.as_slice(value_length)?;
 
         print_string!("Pair Content:");
-        let block_to_add =
-            match pair_id {
-                SIGNATURE_SCHEME_V2_BLOCK_ID => Self::SignatureSchemeV2Block(
-                    SignatureSchemeV2::parse(pair_size, pair_id, block_value)?,
-                ),
-                SOURCE_STAMP_BLOCK_ID => {
-                    Self::SourceStampBlock(SourceStamp::parse(pair_size, pair_id, block_value)?)
-                }
-                VERITY_PADDING_BLOCK_ID => {
-                    add_space!(4);
-                    print_string!("Padding Block of {} bytes", block_value.len());
-                    Self::BaseSigningBlock(RawData {
-                        size: pair_size,
-                        id: pair_id,
-                        data: block_value.to_vec(),
-                    })
-                }
-                _ => Self::BaseSigningBlock(RawData {
+        let block_to_add = match pair_id {
+            SIGNATURE_SCHEME_V2_BLOCK_ID => Self::SignatureSchemeV2Block(SignatureSchemeV2::parse(
+                pair_size,
+                pair_id,
+                block_value,
+            )?),
+            SOURCE_STAMP_BLOCK_ID => {
+                Self::SourceStampBlock(SourceStamp::parse(pair_size, pair_id, block_value)?)
+            }
+            #[cfg(feature = "elf")]
+            ELF_SECTION_INFO_BLOCK_ID => {
+                Self::ElfSectionInfoBlock(ElfSectionInfo::parse(pair_size, pair_id, block_value)?)
+            }
+            VERITY_PADDING_BLOCK_ID => {
+                add_space!(4);
+                print_string!("Padding Block of {} bytes", block_value.len());
+                Self::BaseSigningBlock(RawData {
                     size: pair_size,
                     id: pair_id,
                     data: block_value.to_vec(),
-                }),
-            };
+                })
+            }
+            _ => Self::BaseSigningBlock(RawData {
+                size: pair_size,
+                id: pair_id,
+                data: block_value.to_vec(),
+            }),
+        };
         Ok(block_to_add)
     }
 
@@ -174,6 +192,8 @@ impl ValueSigningBlock {
         match self {
             Self::SignatureSchemeV2Block(scheme) => scheme.to_u8(),
             Self::SourceStampBlock(stamp) => stamp.to_u8(),
+            #[cfg(feature = "elf")]
+            Self::ElfSectionInfoBlock(info) => info.to_u8(),
             Self::BaseSigningBlock(block) => block.to_u8(),
         }
     }
