@@ -370,15 +370,13 @@ impl CertChainVerifier {
                 .unwrap_or(0)
         ));
 
-        // For code signing, we don't enforce EKU since webpki only supports
-        // client_auth and server_auth, not codeSigning (OID 1.3.6.1.5.5.7.3.3).
-        // We use client_auth as a placeholder and treat EKU errors as acceptable.
+        // Verify certificate chain with codeSigning EKU requirement
         let result = ee_cert.verify_for_usage(
             ALL_VERIFICATION_ALGS,
             self.trusted_roots.trust_anchors(),
             &intermediate_certs,
             now,
-            webpki::KeyUsage::client_auth(),
+            &webpki::ExtendedKeyUsage::code_signing(),
             None, // No CRL checking
             None, // No verify_path callback
         );
@@ -396,22 +394,11 @@ impl CertChainVerifier {
                 let chain_valid = self.validate_chain_structure(end_entity, intermediates);
                 (chain_valid, false, Some("Unknown issuer - certificate not signed by trusted root".to_string()))
             }
+            Err(webpki::Error::RequiredEkuNotFound(_)) => {
+                (false, false, Some("Certificate does not have codeSigning EKU".to_string()))
+            }
             Err(e) => {
-                // Check if this is an EKU-related error
-                // For code signing certificates, EKU mismatch is acceptable
-                let err_str = format!("{:?}", e);
-                #[allow(deprecated)]
-                let is_eku_error = matches!(e, webpki::Error::RequiredEkuNotFound)
-                    || err_str.contains("Eku");
-
-                if is_eku_error {
-                    // EKU check failed but that's OK for code signing
-                    // The chain signature and time validity were verified by webpki
-                    // before it checked EKU, so we can trust the chain
-                    (true, true, None)
-                } else {
-                    (false, false, Some(format!("Chain verification failed: {:?}", e)))
-                }
+                (false, false, Some(format!("Chain verification failed: {:?}", e)))
             }
         }
     }
