@@ -117,9 +117,9 @@ pub fn execute(args: VerifyArgs) -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    // Verify Source Stamp (if present)
+    // Verify Source Stamp (if present) with digest verification
     // Note: We preserve the error to distinguish between "not found" and "verification failed"
-    let stamp_result = verifier.verify_source_stamp(&signing_block);
+    let stamp_result = verifier.verify_source_stamp_with_digest(&signing_block, Some(&digest_context));
 
     // Display V2 signature verification result
     match &v2_result {
@@ -208,11 +208,16 @@ pub fn execute(args: VerifyArgs) -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Display Source Stamp verification result
+    // Track if stamp digest verification failed (content integrity)
+    let mut stamp_digest_failed = false;
+
     match &stamp_result {
         Ok(result) => {
-            if result.signature_valid {
+            // Both signature AND digest must be valid for full verification
+            if result.signature_valid && result.digest_valid {
                 println!("✓ Source Stamp verification passed");
                 println!("  Signature valid: {}", result.signature_valid);
+                println!("  Digest valid: {}", result.digest_valid);
                 println!("  Certificate chain valid: {}", result.cert_chain_valid);
                 println!("  Trusted: {}", result.is_trusted);
                 if let Some(ref cert) = result.certificate {
@@ -222,14 +227,28 @@ pub fn execute(args: VerifyArgs) -> Result<(), Box<dyn std::error::Error>> {
                         describe_certificate(cert)
                     );
                 }
-            } else {
-                eprintln!("⚠ Source Stamp signature invalid");
+            } else if result.signature_valid && !result.digest_valid {
+                // Signature valid but digest mismatch - potential tampering!
+                eprintln!("⚠ Source Stamp signature valid but DIGEST MISMATCH!");
+                eprintln!("  Signature valid: {}", result.signature_valid);
+                eprintln!("  Digest valid: {} ← CONTENT INTEGRITY FAILED", result.digest_valid);
+                eprintln!("  Certificate chain valid: {}", result.cert_chain_valid);
+                eprintln!("  ⚠ WARNING: Module content may have been tampered with!");
                 if !result.warnings.is_empty() {
                     for warning in &result.warnings {
                         eprintln!("  ⚠ {}", warning);
                     }
                 }
-                // Source Stamp failure is a warning, but we should report it
+                stamp_digest_failed = true;
+            } else {
+                eprintln!("⚠ Source Stamp signature invalid");
+                eprintln!("  Signature valid: {}", result.signature_valid);
+                eprintln!("  Digest valid: {}", result.digest_valid);
+                if !result.warnings.is_empty() {
+                    for warning in &result.warnings {
+                        eprintln!("  ⚠ {}", warning);
+                    }
+                }
             }
         }
         Err(VerifyError::NoSignature) => {
@@ -250,8 +269,8 @@ pub fn execute(args: VerifyArgs) -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    // Check if Source Stamp verification failed (not just missing)
-    let stamp_failed = matches!(
+    // Check if Source Stamp verification failed (error OR digest mismatch)
+    let stamp_failed = stamp_digest_failed || matches!(
         &stamp_result,
         Err(e) if !matches!(e, VerifyError::NoSignature)
     );
