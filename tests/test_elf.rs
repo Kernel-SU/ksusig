@@ -3,7 +3,7 @@
 use std::io::Write;
 use std::path::PathBuf;
 
-use modsig::{
+use ksusig::{
     file_formats::elf::{ElfFile, DEFAULT_SIGNED_SECTIONS, KSU_SIGN_SECTION},
     signable::{FileFormat, Signable, SignableFile},
     signing_block::algorithms::Algorithms,

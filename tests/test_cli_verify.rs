@@ -3,7 +3,7 @@ use predicates::str::contains;
 
 #[test]
 fn cli_verify_trusted_fixture_passes() {
-    Command::cargo_bin("modsig")
+    Command::cargo_bin("ksusig")
         .expect("binary exists")
         .args(["verify", "tests/fixtures/test_ksu_signed.zip"])
         .assert()
@@ -12,7 +12,7 @@ fn cli_verify_trusted_fixture_passes() {
 
 #[test]
 fn cli_verify_untrusted_fixture_fails() {
-    Command::cargo_bin("modsig")
+    Command::cargo_bin("ksusig")
         .expect("binary exists")
         .args(["verify", "tests/fixtures/test_signed.zip"])
         .assert()

@@ -48,12 +48,12 @@ certificates/
 
 ```bash
 # 使用 P-256 密钥签名
-modsig sign input.zip output.zip \
+ksusig sign input.zip output.zip \
   --key test_keys/test_p256.key \
   --cert test_keys/test_p256.crt
 
 # 使用 P-384 密钥签名
-modsig sign input.zip output.zip \
+ksusig sign input.zip output.zip \
   --key test_keys/test_p384.key \
   --cert test_keys/test_p384.crt
 ```
@@ -62,17 +62,17 @@ modsig sign input.zip output.zip \
 
 ```bash
 # 使用默认的内置根证书验证
-modsig verify signed_module.zip
+ksusig verify signed_module.zip
 
 # 使用自定义根证书验证
-modsig verify signed_module.zip \
+ksusig verify signed_module.zip \
   --root root_ca/root_ca_p256.crt
 ```
 
 ### 双重签名 (V2 + Source Stamp)
 
 ```bash
-modsig sign input.zip output.zip \
+ksusig sign input.zip output.zip \
   --v2-key test_keys/test_p256.key \
   --v2-cert test_keys/test_p256.crt \
   --stamp-key test_keys/test_p384.key \

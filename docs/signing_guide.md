@@ -5,7 +5,7 @@ This guide demonstrates how to sign a KSU module using OpenSSL and verify the si
 ## Prerequisites
 
 - OpenSSL installed
-- modsig CLI tool built (`cargo build --release`)
+- ksusig CLI tool built (`cargo build --release`)
 
 ## Step 1: Generate Signing Keys
 
@@ -26,7 +26,7 @@ openssl x509 -req -days 3650 \
   -signkey test_p384.key \
   -out test_p384.crt
 
-# Convert to PKCS#8 format (required by modsig)
+# Convert to PKCS#8 format (required by ksusig)
 openssl pkcs8 -topk8 -nocrypt \
   -in test_p384.key \
   -out test_p384_pkcs8.key

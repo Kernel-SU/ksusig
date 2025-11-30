@@ -1,4 +1,4 @@
-//! Command-line interface for modsig
+//! Command-line interface for ksusig
 
 use clap::{Parser, Subcommand};
 
@@ -10,7 +10,7 @@ pub mod verify;
 
 /// KSU Module signing tool
 #[derive(Parser)]
-#[command(name = "modsig")]
+#[command(name = "ksusig")]
 #[command(author, version, about, long_about = None)]
 pub struct Cli {
     /// Subcommand

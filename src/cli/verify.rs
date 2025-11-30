@@ -1,7 +1,7 @@
 //! Verify command - Verify module signatures
 
 use clap::Args;
-use modsig::{Module, SignatureVerifier, TrustedRoots, VerifyError};
+use ksusig::{Module, SignatureVerifier, TrustedRoots, VerifyError};
 use std::fs;
 use std::path::PathBuf;
 

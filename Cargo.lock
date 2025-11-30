@@ -592,6 +592,33 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d75a2a4b1b190afb6f5425f10f6a8f959d2ea0b9c2b1d79553551850539e4674"
 
 [[package]]
+name = "ksusig"
+version = "0.3.0"
+dependencies = [
+ "assert_cmd",
+ "base64",
+ "clap",
+ "goblin",
+ "md5",
+ "p12",
+ "p256",
+ "p384",
+ "pem",
+ "pkcs8",
+ "predicates",
+ "rand",
+ "scroll",
+ "serde",
+ "serde_json",
+ "sha1",
+ "sha2",
+ "tempfile",
+ "webpki",
+ "x509-cert",
+ "x509-parser",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -632,33 +659,6 @@ name = "minimal-lexical"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
-
-[[package]]
-name = "modsig"
-version = "0.3.0"
-dependencies = [
- "assert_cmd",
- "base64",
- "clap",
- "goblin",
- "md5",
- "p12",
- "p256",
- "p384",
- "pem",
- "pkcs8",
- "predicates",
- "rand",
- "scroll",
- "serde",
- "serde_json",
- "sha1",
- "sha2",
- "tempfile",
- "webpki",
- "x509-cert",
- "x509-parser",
-]
 
 [[package]]
 name = "nom"

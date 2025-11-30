@@ -1,13 +1,13 @@
 [package]
-name = "modsig"
+name = "ksusig"
 version = "0.3.0"
 edition = "2021"
 description = "KernelSU Module Signature Tooling Library and CLI"
-documentation = "https://docs.rs/modsig"
+documentation = "https://docs.rs/ksusig"
 license = "MIT"
 readme = "./README.md"
-repository = "https://github.com/Kernel-SU/modsig"
-keywords = ["KernelSU", "signing", "signature", "modsig", "module"]
+repository = "https://github.com/Kernel-SU/ksusig"
+keywords = ["KernelSU", "signing", "signature", "ksusig", "module"]
 categories = ["api-bindings", "command-line-utilities"]
 exclude = ["tests/"]
 

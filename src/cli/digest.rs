@@ -1,7 +1,7 @@
 //! Digest command - Calculate digest of signable regions
 
 use clap::Args;
-use modsig::{signing_block::algorithms::Algorithms, FileFormat, SignableFile};
+use ksusig::{signing_block::algorithms::Algorithms, FileFormat, SignableFile};
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::PathBuf;
@@ -125,7 +125,7 @@ pub fn execute(args: DigestArgs) -> Result<(), Box<dyn std::error::Error>> {
 /// Dump raw signable regions to a file
 fn dump_regions(
     input_path: &PathBuf,
-    regions: &[modsig::DigestRegion],
+    regions: &[ksusig::DigestRegion],
     output_path: &PathBuf,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut input = File::open(input_path)?;

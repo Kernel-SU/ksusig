@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
-use modsig::{CertChainVerifier, Module, SignatureVerifier, TrustedRoots, VerifyError};
+use ksusig::{CertChainVerifier, Module, SignatureVerifier, TrustedRoots, VerifyError};
 
-fn load_signing_block(path: &str) -> Result<modsig::SigningBlock, String> {
+fn load_signing_block(path: &str) -> Result<ksusig::SigningBlock, String> {
     let module_path = PathBuf::from(path);
     let module = Module::new(module_path).map_err(|e| e.to_string())?;
     module.get_signing_block().map_err(|e| e.to_string())

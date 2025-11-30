@@ -3,8 +3,8 @@
 //!
 //! CLI usage:
 //! ```shell
-//! cargo install modsig
-//! modsig <filename>
+//! cargo install ksusig
+//! ksusig <filename>
 //! ```
 //!
 

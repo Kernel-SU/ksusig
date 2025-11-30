@@ -1,4 +1,4 @@
-# modsig
+# ksusig
 
 [简体中文](README_CN.md) | English
 
@@ -16,7 +16,7 @@ A Rust library and CLI tool for decoding, inspecting, signing and verifying Kern
 ## Installation
 
 ```sh
-cargo install --git https://github.com/Kernel-SU/modsig
+cargo install --git https://github.com/Kernel-SU/ksusig
 ```
 
 ## Usage
@@ -25,27 +25,27 @@ cargo install --git https://github.com/Kernel-SU/modsig
 
 ```sh
 # Quick verify
-modsig verify module.zip
+ksusig verify module.zip
 # Verbose (shows certificate details, chain/trust)
-modsig verify module.zip -v
+ksusig verify module.zip -v
 # Verify with custom root CA
-modsig verify module.zip --root my_root.pem
+ksusig verify module.zip --root my_root.pem
 
 # Show parsed signing block + certificate details
-modsig info module.zip
+ksusig info module.zip
 ```
 
 ### Rust Library
 
 ```toml
 [dependencies] # adjust features as needed
-modsig = { path = ".", default-features = false, features = ["signing", "serde", "verify"] }
+ksusig = { path = ".", default-features = false, features = ["signing", "serde", "verify"] }
 ```
 
 Example code:
 
 ```rust
-use modsig::{Module, SignatureVerifier};
+use ksusig::{Module, SignatureVerifier};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let module = Module::new("module.zip".into())?;
@@ -84,7 +84,7 @@ verify       # Certificate chain parsing/issuer matching
 Disable default features:
 
 ```toml
-modsig = { path = ".", default-features = false, features = ["serde"] }
+ksusig = { path = ".", default-features = false, features = ["serde"] }
 ```
 
 ## Build and Test

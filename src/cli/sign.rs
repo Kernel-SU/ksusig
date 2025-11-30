@@ -1,12 +1,12 @@
 //! Sign command - Sign module files
 
 use clap::Args;
-use modsig::{
+use ksusig::{
     common::{Digest, Digests},
     load_p12, load_pem, FileFormat, ModuleSigner, ModuleSignerConfig, SignableFile,
 };
 #[cfg(feature = "elf")]
-use modsig::{signing_block::elf_section_info::ElfSectionInfo, ValueSigningBlock};
+use ksusig::{signing_block::elf_section_info::ElfSectionInfo, ValueSigningBlock};
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::PathBuf;

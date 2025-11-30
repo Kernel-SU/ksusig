@@ -1,7 +1,7 @@
 //! Info command - Display signing block information
 
 use clap::Args;
-use modsig::{SignatureVerifier, SigningBlock};
+use ksusig::{SignatureVerifier, SigningBlock};
 use std::fs::File;
 use std::io::{BufReader, Seek, SeekFrom};
 use std::path::PathBuf;
@@ -42,17 +42,17 @@ pub fn execute(args: InfoArgs) -> Result<(), Box<dyn std::error::Error>> {
                 println!("Signing block contents:");
                 for value in &sig_block.content {
                     match value {
-                        modsig::ValueSigningBlock::SignatureSchemeV2Block(_) => {
+                        ksusig::ValueSigningBlock::SignatureSchemeV2Block(_) => {
                             println!("  ✓ V2 Signature Scheme");
                         }
-                        modsig::ValueSigningBlock::SourceStampBlock(_) => {
+                        ksusig::ValueSigningBlock::SourceStampBlock(_) => {
                             println!("  ✓ Source Stamp");
                         }
                         #[cfg(feature = "elf")]
-                        modsig::ValueSigningBlock::ElfSectionInfoBlock(info) => {
+                        ksusig::ValueSigningBlock::ElfSectionInfoBlock(info) => {
                             println!("  ✓ ELF Section Info ({} section(s))", info.section_count);
                         }
-                        modsig::ValueSigningBlock::BaseSigningBlock(data) => {
+                        ksusig::ValueSigningBlock::BaseSigningBlock(data) => {
                             println!("  • Unknown Block (ID: 0x{:x})", data.id);
                         }
                     }

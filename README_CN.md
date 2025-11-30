@@ -1,4 +1,4 @@
-# modsig
+# ksusig
 
 简体中文 | [English](README.md)
 
@@ -16,7 +16,7 @@
 ## 安装
 
 ```sh
-cargo install --git https://github.com/Kernel-SU/modsig
+cargo install --git https://github.com/Kernel-SU/ksusig
 ```
 
 ## 使用
@@ -25,27 +25,27 @@ cargo install --git https://github.com/Kernel-SU/modsig
 
 ```sh
 # 快速验证
-modsig verify module.zip
+ksusig verify module.zip
 # 查看证书详情/链校验
-modsig verify module.zip -v
+ksusig verify module.zip -v
 # 使用自定义根证书验证
-modsig verify module.zip --root my_root.pem
+ksusig verify module.zip --root my_root.pem
 
 # 显示解析出的签名块与证书详情
-modsig info module.zip
+ksusig info module.zip
 ```
 
 ### Rust 库
 
 ```toml
 [dependencies] # 按需选择 feature
-modsig = { path = ".", default-features = false, features = ["signing", "serde", "verify"] }
+ksusig = { path = ".", default-features = false, features = ["signing", "serde", "verify"] }
 ```
 
 示例代码：
 
 ```rust
-use modsig::{Module, SignatureVerifier};
+use ksusig::{Module, SignatureVerifier};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let module = Module::new("module.zip".into())?;
@@ -84,7 +84,7 @@ verify      # 证书链解析与 issuer/subject 匹配
 禁用默认 features：
 
 ```toml
-modsig = { path = ".", default-features = false, features = ["serde"] }
+ksusig = { path = ".", default-features = false, features = ["serde"] }
 ```
 
 ## 构建和测试

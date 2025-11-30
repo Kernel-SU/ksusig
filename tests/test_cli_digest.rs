@@ -7,7 +7,7 @@ use tempfile::NamedTempFile;
 
 #[test]
 fn cli_digest_zip_sha256_default() {
-    Command::cargo_bin("modsig")
+    Command::cargo_bin("ksusig")
         .expect("binary exists")
         .args(["digest", "tests/fixtures/test_unsigned.zip"])
         .assert()
@@ -17,7 +17,7 @@ fn cli_digest_zip_sha256_default() {
 
 #[test]
 fn cli_digest_zip_sha512() {
-    Command::cargo_bin("modsig")
+    Command::cargo_bin("ksusig")
         .expect("binary exists")
         .args(["digest", "tests/fixtures/test_unsigned.zip", "--sha512"])
         .assert()
@@ -27,7 +27,7 @@ fn cli_digest_zip_sha512() {
 
 #[test]
 fn cli_digest_zip_base64_format() {
-    Command::cargo_bin("modsig")
+    Command::cargo_bin("ksusig")
         .expect("binary exists")
         .args([
             "digest",
@@ -42,7 +42,7 @@ fn cli_digest_zip_base64_format() {
 
 #[test]
 fn cli_digest_shows_regions() {
-    Command::cargo_bin("modsig")
+    Command::cargo_bin("ksusig")
         .expect("binary exists")
         .args(["digest", "tests/fixtures/test_unsigned.zip"])
         .assert()
@@ -57,7 +57,7 @@ fn cli_digest_dump_creates_file() {
     let output = NamedTempFile::new().expect("create temp file");
     let output_path = output.path().to_str().unwrap();
 
-    Command::cargo_bin("modsig")
+    Command::cargo_bin("ksusig")
         .expect("binary exists")
         .args([
             "digest",
@@ -78,7 +78,7 @@ fn cli_digest_dump_creates_file() {
 fn cli_digest_signed_zip_works() {
     // Note: directprint feature may output signing block info to stdout
     // We just verify the command succeeds and output contains a valid hex digest
-    Command::cargo_bin("modsig")
+    Command::cargo_bin("ksusig")
         .expect("binary exists")
         .args(["digest", "tests/fixtures/test_signed.zip"])
         .assert()
@@ -88,7 +88,7 @@ fn cli_digest_signed_zip_works() {
 
 #[test]
 fn cli_digest_sha256_and_sha512_mutually_exclusive() {
-    Command::cargo_bin("modsig")
+    Command::cargo_bin("ksusig")
         .expect("binary exists")
         .args([
             "digest",
@@ -102,7 +102,7 @@ fn cli_digest_sha256_and_sha512_mutually_exclusive() {
 
 #[test]
 fn cli_digest_nonexistent_file_fails() {
-    Command::cargo_bin("modsig")
+    Command::cargo_bin("ksusig")
         .expect("binary exists")
         .args(["digest", "nonexistent_file.zip"])
         .assert()
@@ -112,13 +112,13 @@ fn cli_digest_nonexistent_file_fails() {
 #[test]
 fn cli_digest_consistent_output() {
     // Run digest twice and ensure output is identical
-    let output1 = Command::cargo_bin("modsig")
+    let output1 = Command::cargo_bin("ksusig")
         .expect("binary exists")
         .args(["digest", "tests/fixtures/test_unsigned.zip"])
         .output()
         .expect("run command");
 
-    let output2 = Command::cargo_bin("modsig")
+    let output2 = Command::cargo_bin("ksusig")
         .expect("binary exists")
         .args(["digest", "tests/fixtures/test_unsigned.zip"])
         .output()
@@ -207,7 +207,7 @@ fn cli_digest_elf_default_sections() {
     elf_file.write_all(&create_minimal_elf()).expect("write ELF");
     elf_file.flush().expect("flush");
 
-    Command::cargo_bin("modsig")
+    Command::cargo_bin("ksusig")
         .expect("binary exists")
         .args(["digest", elf_file.path().to_str().unwrap()])
         .assert()
@@ -224,7 +224,7 @@ fn cli_digest_elf_custom_section() {
     elf_file.write_all(&create_minimal_elf()).expect("write ELF");
     elf_file.flush().expect("flush");
 
-    Command::cargo_bin("modsig")
+    Command::cargo_bin("ksusig")
         .expect("binary exists")
         .args([
             "digest",
@@ -245,7 +245,7 @@ fn cli_digest_elf_dump() {
 
     let output = NamedTempFile::new().expect("create output file");
 
-    Command::cargo_bin("modsig")
+    Command::cargo_bin("ksusig")
         .expect("binary exists")
         .args([
             "digest",
