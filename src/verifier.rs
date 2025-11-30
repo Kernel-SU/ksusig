@@ -34,6 +34,8 @@ pub enum VerifyError {
     ChainSignatureInvalid(String),
     /// Multiple signers with at least one failure
     MultiSignerFailure(Vec<String>),
+    /// Public key mismatch - signing key doesn't match certificate
+    PublicKeyMismatch,
 }
 
 impl std::fmt::Display for VerifyError {
@@ -51,11 +53,68 @@ impl std::fmt::Display for VerifyError {
             Self::MultiSignerFailure(errors) => {
                 write!(f, "Multiple signer verification failed: {}", errors.join("; "))
             }
+            Self::PublicKeyMismatch => {
+                write!(f, "Public key mismatch: signing key doesn't match certificate's public key")
+            }
         }
     }
 }
 
 impl std::error::Error for VerifyError {}
+
+/// Extract SubjectPublicKeyInfo from a DER-encoded X.509 certificate
+///
+/// This function parses the certificate and extracts the public key
+/// in SubjectPublicKeyInfo (SPKI) DER format.
+///
+/// # Arguments
+/// * `cert_der` - DER-encoded X.509 certificate
+///
+/// # Returns
+/// The SubjectPublicKeyInfo in DER format, or an error message
+///
+/// # Errors
+/// Returns an error if certificate parsing or SPKI encoding fails
+#[cfg(feature = "verify")]
+fn extract_public_key_from_cert(cert_der: &[u8]) -> Result<Vec<u8>, String> {
+    use x509_cert::Certificate;
+
+    let cert = Certificate::from_der(cert_der)
+        .map_err(|e| format!("Failed to parse certificate: {}", e))?;
+
+    // Get the SubjectPublicKeyInfo and encode it to DER
+    use x509_cert::der::Encode;
+    let spki = &cert.tbs_certificate.subject_public_key_info;
+    spki.to_der()
+        .map_err(|e| format!("Failed to encode SPKI: {}", e))
+}
+
+/// Verify that the signing public key matches the certificate's public key
+///
+/// This is a critical security check to ensure the signature was created
+/// with the private key corresponding to the certificate, preventing
+/// attacks where an attacker uses their own key pair but includes a
+/// trusted certificate chain.
+///
+/// # Arguments
+/// * `signing_pubkey` - The public key used for signature verification (SPKI DER format)
+/// * `cert_der` - DER-encoded X.509 certificate
+///
+/// # Returns
+/// Ok(()) if keys match, Err with description if they don't match or parsing fails
+///
+/// # Errors
+/// Returns an error if certificate parsing fails or public keys don't match
+#[cfg(feature = "verify")]
+fn verify_pubkey_binding(signing_pubkey: &[u8], cert_der: &[u8]) -> Result<(), String> {
+    let cert_pubkey = extract_public_key_from_cert(cert_der)?;
+
+    if signing_pubkey != cert_pubkey {
+        return Err("Public key in signing block does not match certificate's public key".to_string());
+    }
+
+    Ok(())
+}
 
 /// Result of verifying a single signer
 #[derive(Debug, Default, Clone)]
@@ -644,6 +703,18 @@ impl SignatureVerifier {
                     if let Some(cert) = signer.signed_data.certificates.certificates_data.first() {
                         signer_result.certificate = Some(cert.certificate.clone());
 
+                        // CRITICAL SECURITY CHECK: Verify that the signing public key matches
+                        // the certificate's public key. This prevents attacks where an attacker
+                        // uses their own key pair but includes a trusted certificate chain.
+                        if let Err(e) = verify_pubkey_binding(pubkey, &cert.certificate) {
+                            signer_result.error = Some(format!("Public key binding failed: {}", e));
+                            signer_result.signature_valid = false;
+                            signer_result.cert_chain_valid = false;
+                            signer_result.is_trusted = false;
+                            signer_results.push(signer_result);
+                            continue;
+                        }
+
                         let intermediates: Vec<Vec<u8>> = signer
                             .signed_data
                             .certificates
@@ -791,6 +862,18 @@ impl SignatureVerifier {
                     .first()
                 {
                     signer_result.certificate = Some(cert.certificate.clone());
+
+                    // CRITICAL SECURITY CHECK: Verify that the signing public key matches
+                    // the certificate's public key. This prevents attacks where an attacker
+                    // uses their own key pair but includes a trusted certificate chain.
+                    if let Err(e) = verify_pubkey_binding(pubkey, &cert.certificate) {
+                        signer_result.error = Some(format!("Public key binding failed: {}", e));
+                        signer_result.signature_valid = false;
+                        signer_result.cert_chain_valid = false;
+                        signer_result.is_trusted = false;
+                        signer_results.push(signer_result);
+                        break;
+                    }
 
                     // Verify certificate (no chain for source stamp typically)
                     let (chain_valid, is_trusted, chain_error) =

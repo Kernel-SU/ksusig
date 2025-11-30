@@ -110,8 +110,7 @@ impl Module {
     /// # Returns
     /// Returns `VerifyAllResult` containing verification results for both V2 and Source Stamp.
     /// Use `result.is_valid()` to check if all present signatures passed verification.
-    #[cfg(feature = "signing")]
-    #[cfg(feature = "hash")]
+    #[cfg(feature = "verify")]
     pub fn verify_full(&self) -> crate::verifier::VerifyAllResult {
         use crate::verifier::{DigestContext, SignatureVerifier, VerifyAllResult, VerifyError};
 
@@ -162,8 +161,7 @@ impl Module {
     /// # Returns
     /// Returns `VerifyAllResult` containing verification results for both V2 and Source Stamp.
     /// Use `result.is_valid()` to check if all present signatures passed verification.
-    #[cfg(feature = "signing")]
-    #[cfg(feature = "hash")]
+    #[cfg(feature = "verify")]
     pub fn verify_with_roots(
         &self,
         roots: crate::verifier::TrustedRoots,
