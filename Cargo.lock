@@ -610,6 +610,7 @@ dependencies = [
  "rustls-pki-types",
  "rustls-webpki",
  "scroll",
+ "sec1",
  "serde",
  "serde_json",
  "sha1",

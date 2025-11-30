@@ -18,6 +18,7 @@ sha1 = { version = "0.10.6", optional = true }
 sha2 = { version = "0.10.8", optional = true }
 p256 = { version = "0.13", features = ["ecdsa", "pkcs8", "pem"], optional = true }
 p384 = { version = "0.13", features = ["ecdsa", "pkcs8", "pem"], optional = true }
+sec1 = { version = "0.7", features = ["pem"], optional = true }
 # keystore support
 pem = { version = "3.0", optional = true }
 pkcs8 = { version = "0.10", features = ["encryption", "pem"], optional = true }
@@ -59,10 +60,12 @@ default = ["directprint", "serde", "hash", "signing", "keystore", "verify", "elf
 signing = ["hash", "dep:p256", "dep:p384"]
 
 # keystore support (PEM and P12 format)
-keystore = ["signing", "dep:pem", "dep:pkcs8", "dep:p12", "dep:x509-cert"]
+# Note: sec1 is needed for SEC1/OpenSSL EC private key format support
+keystore = ["signing", "dep:pem", "dep:pkcs8", "dep:p12", "dep:x509-cert", "dep:sec1"]
 
 # certificate chain verification (with real signature validation)
-verify = ["signing", "dep:x509-cert", "dep:rustls-webpki", "dep:rustls-pki-types"]
+# Note: pem is needed for parsing built-in root certificates
+verify = ["signing", "dep:x509-cert", "dep:rustls-webpki", "dep:rustls-pki-types", "dep:pem"]
 
 # allows to serialize and deserialize structs with serde
 serde = ["dep:serde"]

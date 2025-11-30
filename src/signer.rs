@@ -260,6 +260,8 @@ pub struct ModuleSigner {
     stamp_config: Option<ModuleSignerConfig>,
     /// Whether to include timestamp in source stamp
     timestamp_enabled: bool,
+    /// Whether to add 4K alignment padding (Verity padding)
+    padding_enabled: bool,
 }
 
 impl ModuleSigner {
@@ -269,6 +271,7 @@ impl ModuleSigner {
             v2_config: Some(config),
             stamp_config: None,
             timestamp_enabled: true,
+            padding_enabled: true,
         }
     }
 
@@ -281,6 +284,7 @@ impl ModuleSigner {
             v2_config: Some(v2_config),
             stamp_config: Some(stamp_config),
             timestamp_enabled: true,
+            padding_enabled: true,
         }
     }
 
@@ -290,12 +294,22 @@ impl ModuleSigner {
             v2_config: None,
             stamp_config: Some(stamp_config),
             timestamp_enabled: true,
+            padding_enabled: true,
         }
     }
 
     /// Set timestamp option for source stamp
     pub const fn timestamp_enabled(mut self, enabled: bool) -> Self {
         self.timestamp_enabled = enabled;
+        self
+    }
+
+    /// Set 4K alignment padding option (Verity padding)
+    ///
+    /// When enabled (default), the signing block will be padded to 4096 byte alignment.
+    /// This is recommended for compatibility with tools that expect Verity padding.
+    pub const fn padding_enabled(mut self, enabled: bool) -> Self {
+        self.padding_enabled = enabled;
         self
     }
 
@@ -322,7 +336,8 @@ impl ModuleSigner {
     /// * `digests` - The content digests to include
     ///
     /// # Returns
-    /// A complete `SigningBlock` ready to be inserted into the module file
+    /// A complete `SigningBlock` ready to be inserted into the module file.
+    /// If `padding_enabled` is true (default), the block will be padded to 4096 byte alignment.
     ///
     /// # Errors
     /// Returns an error if signing fails
@@ -360,7 +375,13 @@ impl ModuleSigner {
             return Err("No signing configuration provided".to_string());
         }
 
-        Ok(SigningBlock::new(blocks))
+        // Use padding for 4K alignment if enabled (recommended for Verity compatibility)
+        if self.padding_enabled {
+            SigningBlock::new_with_padding(blocks)
+                .map_err(|e| format!("Failed to create padded signing block: {}", e))
+        } else {
+            Ok(SigningBlock::new(blocks))
+        }
     }
 
     /// Add source stamp to an existing signing block

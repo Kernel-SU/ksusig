@@ -226,7 +226,10 @@ impl TrustedRoots {
     ///
     /// This includes the official KernelSU Root CA P-384 certificate
     /// for verifying signed modules.
-    #[cfg(feature = "keystore")]
+    ///
+    /// Note: Requires either `keystore` or `verify` feature to be enabled.
+    /// When neither is enabled, returns an empty trusted roots store.
+    #[cfg(any(feature = "keystore", feature = "verify"))]
     pub fn with_builtin() -> Self {
         const KERNELSU_ROOT_CA_P384: &str =
             include_str!("../builtin_certs/kernelsu_root_ca_p384.pem");
@@ -244,8 +247,8 @@ impl TrustedRoots {
         roots
     }
 
-    /// Create with built-in KSU root certificates (fallback when keystore feature is disabled)
-    #[cfg(not(feature = "keystore"))]
+    /// Create with built-in KSU root certificates (fallback when neither keystore nor verify feature is enabled)
+    #[cfg(not(any(feature = "keystore", feature = "verify")))]
     pub fn with_builtin() -> Self {
         Self::new()
     }
@@ -270,7 +273,7 @@ impl TrustedRoots {
     ///
     /// # Errors
     /// Returns an error if PEM parsing fails
-    #[cfg(feature = "keystore")]
+    #[cfg(any(feature = "keystore", feature = "verify"))]
     pub fn add_root_pem(&mut self, pem_data: &[u8]) -> Result<(), String> {
         let pem = pem::parse(pem_data).map_err(|e| format!("Failed to parse PEM: {}", e))?;
         if pem.tag() != "CERTIFICATE" {

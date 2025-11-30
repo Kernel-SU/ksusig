@@ -4,6 +4,7 @@
 
 use crate::signing_block::algorithms::{Algorithms, PrivateKey};
 use pkcs8::DecodePrivateKey;
+use sec1::DecodeEcPrivateKey;
 
 /// Error type for keystore operations
 #[derive(Debug)]
@@ -130,6 +131,12 @@ pub fn load_pem_from_bytes(
 }
 
 /// Parse a private key from PEM format
+///
+/// Supports the following PEM formats:
+/// - PKCS8 unencrypted (`BEGIN PRIVATE KEY`)
+/// - PKCS8 encrypted (`BEGIN ENCRYPTED PRIVATE KEY`)
+/// - SEC1/OpenSSL EC format (`BEGIN EC PRIVATE KEY`)
+///
 /// # Errors
 /// Returns an error if the PEM data is invalid or the key type is unsupported
 fn parse_private_key_pem(
@@ -145,6 +152,15 @@ fn parse_private_key_pem(
     }
 
     if let Ok(key) = p384::ecdsa::SigningKey::from_pkcs8_pem(pem_str) {
+        return Ok((PrivateKey::EcdsaP384(key), Algorithms::ECDSA_SHA2_512));
+    }
+
+    // Try SEC1/OpenSSL EC format (BEGIN EC PRIVATE KEY)
+    if let Ok(key) = p256::ecdsa::SigningKey::from_sec1_pem(pem_str) {
+        return Ok((PrivateKey::EcdsaP256(key), Algorithms::ECDSA_SHA2_256));
+    }
+
+    if let Ok(key) = p384::ecdsa::SigningKey::from_sec1_pem(pem_str) {
         return Ok((PrivateKey::EcdsaP384(key), Algorithms::ECDSA_SHA2_512));
     }
 
@@ -171,7 +187,7 @@ fn parse_private_key_pem(
     }
 
     Err(KeystoreError::UnsupportedKeyType(
-        "Only ECDSA P-256 and P-384 keys are supported".to_string(),
+        "Only ECDSA P-256 and P-384 keys are supported (PKCS8 or SEC1/OpenSSL format)".to_string(),
     ))
 }
 
@@ -316,21 +332,32 @@ pub fn load_p12_from_bytes(
 }
 
 /// Parse a private key from DER format
+///
+/// Supports both PKCS8 and SEC1 DER formats.
+///
 /// # Errors
 /// Returns an error if the DER data is invalid or the key type is unsupported
 fn parse_private_key_der(der_data: &[u8]) -> Result<(PrivateKey, Algorithms), KeystoreError> {
-    // Try P256
+    // Try PKCS8 format first
     if let Ok(key) = p256::ecdsa::SigningKey::from_pkcs8_der(der_data) {
         return Ok((PrivateKey::EcdsaP256(key), Algorithms::ECDSA_SHA2_256));
     }
 
-    // Try P384
     if let Ok(key) = p384::ecdsa::SigningKey::from_pkcs8_der(der_data) {
         return Ok((PrivateKey::EcdsaP384(key), Algorithms::ECDSA_SHA2_512));
     }
 
+    // Try SEC1 format
+    if let Ok(key) = p256::ecdsa::SigningKey::from_sec1_der(der_data) {
+        return Ok((PrivateKey::EcdsaP256(key), Algorithms::ECDSA_SHA2_256));
+    }
+
+    if let Ok(key) = p384::ecdsa::SigningKey::from_sec1_der(der_data) {
+        return Ok((PrivateKey::EcdsaP384(key), Algorithms::ECDSA_SHA2_512));
+    }
+
     Err(KeystoreError::UnsupportedKeyType(
-        "Only ECDSA P-256 and P-384 keys are supported".to_string(),
+        "Only ECDSA P-256 and P-384 keys are supported (PKCS8 or SEC1 format)".to_string(),
     ))
 }
 
