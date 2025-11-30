@@ -412,41 +412,42 @@ impl SigningBlock {
 
                 // Calculate start position of the full block
                 let block_end_in_window = pos + MAGIC_LEN;
-                let block_start_in_window = match block_end_in_window.checked_sub(block_size + SIZE_UINT64) {
-                    Some(v) => v,
-                    None => {
-                        // Block extends beyond window - need to read from file
-                        // This happens when signing block is larger than window
-                        let block_start_in_file = (window_start + block_end_in_window)
-                            .checked_sub(block_size + SIZE_UINT64);
-                        if block_start_in_file.is_none() {
-                            return Err(std::io::Error::other(format!(
-                                "Error: block size {} is larger than available data",
-                                block_size
-                            )));
-                        }
-                        let block_start_in_file = block_start_in_file.unwrap_or(0);
-                        let file_offset_end = window_start + block_end_in_window;
-
-                        // Read the full block from file
-                        let mut vec_full_block = vec![0u8; block_size + SIZE_UINT64];
-                        reader.seek(SeekFrom::Start(block_start_in_file as u64))?;
-                        reader.read_exact(&mut vec_full_block)?;
-
-                        let mut sig = match Self::parse_full_block(&vec_full_block) {
-                            Ok(v) => v,
-                            Err(e) => {
+                let block_start_in_window =
+                    match block_end_in_window.checked_sub(block_size + SIZE_UINT64) {
+                        Some(v) => v,
+                        None => {
+                            // Block extends beyond window - need to read from file
+                            // This happens when signing block is larger than window
+                            let block_start_in_file = (window_start + block_end_in_window)
+                                .checked_sub(block_size + SIZE_UINT64);
+                            if block_start_in_file.is_none() {
                                 return Err(std::io::Error::other(format!(
-                                    "Error parsing full block: {}",
-                                    e
+                                    "Error: block size {} is larger than available data",
+                                    block_size
                                 )));
                             }
-                        };
-                        sig.file_offset_start = block_start_in_file;
-                        sig.file_offset_end = file_offset_end;
-                        return Ok(sig);
-                    }
-                };
+                            let block_start_in_file = block_start_in_file.unwrap_or(0);
+                            let file_offset_end = window_start + block_end_in_window;
+
+                            // Read the full block from file
+                            let mut vec_full_block = vec![0u8; block_size + SIZE_UINT64];
+                            reader.seek(SeekFrom::Start(block_start_in_file as u64))?;
+                            reader.read_exact(&mut vec_full_block)?;
+
+                            let mut sig = match Self::parse_full_block(&vec_full_block) {
+                                Ok(v) => v,
+                                Err(e) => {
+                                    return Err(std::io::Error::other(format!(
+                                        "Error parsing full block: {}",
+                                        e
+                                    )));
+                                }
+                            };
+                            sig.file_offset_start = block_start_in_file;
+                            sig.file_offset_end = file_offset_end;
+                            return Ok(sig);
+                        }
+                    };
 
                 // Extract the full block from the window
                 let vec_full_block = match window.get(block_start_in_window..block_end_in_window) {
@@ -541,6 +542,32 @@ impl SigningBlock {
                 start_block_size, end_block_size
             ));
         }
+
+        // Minimum valid block size: SIZE_UINT64 (end size field) + MAGIC_LEN
+        // The block_size field represents the size from content start to end of magic
+        let min_block_size = SIZE_UINT64 + MAGIC_LEN;
+        if end_block_size < min_block_size {
+            return Err(format!(
+                "Error: block_size {} is too small (minimum is {})",
+                end_block_size, min_block_size
+            ));
+        }
+
+        // Validate block_size is consistent with actual data length
+        // data layout: [start_size(8)] [content] [end_size(8)] [magic(16)]
+        // so: data.len() = 8 + content_size + 8 + 16 = content_size + 32
+        // and: block_size = content_size + 8 + 16 = content_size + 24
+        // therefore: data.len() should equal block_size + 8
+        let expected_data_len = end_block_size + SIZE_UINT64;
+        if data.len() != expected_data_len {
+            return Err(format!(
+                "Error: block_size {} inconsistent with data length {} (expected {})",
+                end_block_size,
+                data.len(),
+                expected_data_len
+            ));
+        }
+
         let content_size = end_block_size - SIZE_UINT64 - MAGIC_LEN;
         let inner_content = match data.get(8..data.len() - MAGIC_LEN - SIZE_UINT64) {
             Some(v) => v,
@@ -688,7 +715,11 @@ impl SigningBlock {
 impl std::fmt::Display for SigningBlock {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "KSU Signing Block")?;
-        writeln!(f, "  File offset: {} - {}", self.file_offset_start, self.file_offset_end)?;
+        writeln!(
+            f,
+            "  File offset: {} - {}",
+            self.file_offset_start, self.file_offset_end
+        )?;
         writeln!(f, "  Block size: {} bytes", self.size_of_block_start)?;
         writeln!(f, "  Content size: {} bytes", self.content_size)?;
         writeln!(f, "  Blocks: {}", self.content.len())?;
@@ -705,7 +736,9 @@ impl std::fmt::Display for ValueSigningBlock {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::SignatureSchemeV2Block(scheme) => {
-                write!(f, "V2 Signature (id=0x{:08x}, {} signers)",
+                write!(
+                    f,
+                    "V2 Signature (id=0x{:08x}, {} signers)",
                     scheme.id,
                     scheme.signers.signers_data.len()
                 )
@@ -715,7 +748,9 @@ impl std::fmt::Display for ValueSigningBlock {
             }
             #[cfg(feature = "elf")]
             Self::ElfSectionInfoBlock(info) => {
-                write!(f, "ELF Section Info (id=0x{:08x}, {} sections)",
+                write!(
+                    f,
+                    "ELF Section Info (id=0x{:08x}, {} sections)",
                     info.id,
                     info.sections.len()
                 )
@@ -725,7 +760,13 @@ impl std::fmt::Display for ValueSigningBlock {
                     VERITY_PADDING_BLOCK_ID => "Verity Padding",
                     _ => "Unknown",
                 };
-                write!(f, "{} (id=0x{:08x}, {} bytes)", block_name, raw.id, raw.data.len())
+                write!(
+                    f,
+                    "{} (id=0x{:08x}, {} bytes)",
+                    block_name,
+                    raw.id,
+                    raw.data.len()
+                )
             }
         }
     }

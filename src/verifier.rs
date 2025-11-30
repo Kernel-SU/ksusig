@@ -46,15 +46,27 @@ impl std::fmt::Display for VerifyError {
             Self::CertificateError(e) => write!(f, "Certificate error: {}", e),
             Self::CertChainError(e) => write!(f, "Certificate chain error: {}", e),
             Self::UntrustedCertificate => write!(f, "Untrusted certificate"),
-            Self::DigestMismatch => write!(f, "Digest mismatch: stored digest doesn't match computed file content"),
+            Self::DigestMismatch => write!(
+                f,
+                "Digest mismatch: stored digest doesn't match computed file content"
+            ),
             Self::CertificateExpired => write!(f, "Certificate has expired"),
             Self::CertificateNotYetValid => write!(f, "Certificate is not yet valid"),
-            Self::ChainSignatureInvalid(e) => write!(f, "Certificate chain signature invalid: {}", e),
+            Self::ChainSignatureInvalid(e) => {
+                write!(f, "Certificate chain signature invalid: {}", e)
+            }
             Self::MultiSignerFailure(errors) => {
-                write!(f, "Multiple signer verification failed: {}", errors.join("; "))
+                write!(
+                    f,
+                    "Multiple signer verification failed: {}",
+                    errors.join("; ")
+                )
             }
             Self::PublicKeyMismatch => {
-                write!(f, "Public key mismatch: signing key doesn't match certificate's public key")
+                write!(
+                    f,
+                    "Public key mismatch: signing key doesn't match certificate's public key"
+                )
             }
         }
     }
@@ -110,7 +122,9 @@ fn verify_pubkey_binding(signing_pubkey: &[u8], cert_der: &[u8]) -> Result<(), S
     let cert_pubkey = extract_public_key_from_cert(cert_der)?;
 
     if signing_pubkey != cert_pubkey {
-        return Err("Public key in signing block does not match certificate's public key".to_string());
+        return Err(
+            "Public key in signing block does not match certificate's public key".to_string(),
+        );
     }
 
     Ok(())
@@ -230,7 +244,10 @@ impl VerifyResult {
 
         // Backwards compatibility: use first signer's certificate
         let certificate = signers.first().and_then(|s| s.certificate.clone());
-        let cert_chain = signers.first().map(|s| s.cert_chain.clone()).unwrap_or_default();
+        let cert_chain = signers
+            .first()
+            .map(|s| s.cert_chain.clone())
+            .unwrap_or_default();
 
         // Collect all warnings
         let warnings: Vec<String> = signers
@@ -321,7 +338,9 @@ impl TrustedRoots {
     #[cfg(feature = "verify")]
     pub fn add_root(&mut self, cert_der: Vec<u8>) {
         // Try to create a trust anchor from the certificate
-        if let Ok(anchor) = webpki::anchor_from_trusted_cert(&CertificateDer::from(cert_der.clone())) {
+        if let Ok(anchor) =
+            webpki::anchor_from_trusted_cert(&CertificateDer::from(cert_der.clone()))
+        {
             self.trust_anchors.push(anchor.to_owned());
         }
         self.roots.push(cert_der);
@@ -400,13 +419,21 @@ impl CertChainVerifier {
     /// # Returns
     /// A tuple of (is_chain_valid, is_trusted, Option<error_message>)
     #[cfg(feature = "verify")]
-    pub fn verify_chain(&self, end_entity: &[u8], intermediates: &[Vec<u8>]) -> (bool, bool, Option<String>) {
+    pub fn verify_chain(
+        &self,
+        end_entity: &[u8],
+        intermediates: &[Vec<u8>],
+    ) -> (bool, bool, Option<String>) {
         use webpki::{EndEntityCert, ALL_VERIFICATION_ALGS};
 
         // If no trusted roots configured, we can only validate structure
         if self.trusted_roots.is_empty() {
             let chain_valid = self.validate_chain_structure(end_entity, intermediates);
-            return (chain_valid, false, Some("No trusted roots configured".to_string()));
+            return (
+                chain_valid,
+                false,
+                Some("No trusted roots configured".to_string()),
+            );
         }
 
         // Check if end entity is directly trusted (self-signed root)
@@ -419,7 +446,11 @@ impl CertChainVerifier {
         let ee_cert = match EndEntityCert::try_from(&ee_der) {
             Ok(cert) => cert,
             Err(e) => {
-                return (false, false, Some(format!("Failed to parse end-entity certificate: {:?}", e)));
+                return (
+                    false,
+                    false,
+                    Some(format!("Failed to parse end-entity certificate: {:?}", e)),
+                );
             }
         };
 
@@ -434,7 +465,7 @@ impl CertChainVerifier {
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .map(|d| d.as_secs())
-                .unwrap_or(0)
+                .unwrap_or(0),
         ));
 
         // Verify certificate chain with codeSigning EKU requirement
@@ -453,20 +484,30 @@ impl CertChainVerifier {
             Err(webpki::Error::CertExpired { .. }) => {
                 (false, false, Some("Certificate has expired".to_string()))
             }
-            Err(webpki::Error::CertNotValidYet { .. }) => {
-                (false, false, Some("Certificate is not yet valid".to_string()))
-            }
+            Err(webpki::Error::CertNotValidYet { .. }) => (
+                false,
+                false,
+                Some("Certificate is not yet valid".to_string()),
+            ),
             Err(webpki::Error::UnknownIssuer) => {
                 // Chain structure might be valid but not trusted
                 let chain_valid = self.validate_chain_structure(end_entity, intermediates);
-                (chain_valid, false, Some("Unknown issuer - certificate not signed by trusted root".to_string()))
+                (
+                    chain_valid,
+                    false,
+                    Some("Unknown issuer - certificate not signed by trusted root".to_string()),
+                )
             }
-            Err(webpki::Error::RequiredEkuNotFound(_)) => {
-                (false, false, Some("Certificate does not have codeSigning EKU".to_string()))
-            }
-            Err(e) => {
-                (false, false, Some(format!("Chain verification failed: {:?}", e)))
-            }
+            Err(webpki::Error::RequiredEkuNotFound(_)) => (
+                false,
+                false,
+                Some("Certificate does not have codeSigning EKU".to_string()),
+            ),
+            Err(e) => (
+                false,
+                false,
+                Some(format!("Chain verification failed: {:?}", e)),
+            ),
         }
     }
 
@@ -479,7 +520,11 @@ impl CertChainVerifier {
     ///
     /// Enable the `verify` feature for proper chain validation.
     #[cfg(not(feature = "verify"))]
-    pub fn verify_chain(&self, end_entity: &[u8], intermediates: &[Vec<u8>]) -> (bool, bool, Option<String>) {
+    pub fn verify_chain(
+        &self,
+        end_entity: &[u8],
+        intermediates: &[Vec<u8>],
+    ) -> (bool, bool, Option<String>) {
         let _ = intermediates; // Unused without verify feature
 
         // Without verify feature, we cannot validate certificate chains
@@ -487,7 +532,10 @@ impl CertChainVerifier {
             return (
                 false,
                 false,
-                Some("No trusted roots configured; chain validation requires 'verify' feature".to_string()),
+                Some(
+                    "No trusted roots configured; chain validation requires 'verify' feature"
+                        .to_string(),
+                ),
             );
         }
 
@@ -664,10 +712,9 @@ impl SignatureVerifier {
                         let digest = match digest {
                             Some(d) => d,
                             None => {
-                                signer_result.warnings.push(format!(
-                                    "No digest found for algorithm {}",
-                                    algo
-                                ));
+                                signer_result
+                                    .warnings
+                                    .push(format!("No digest found for algorithm {}", algo));
                                 sig_valid = false;
                                 break;
                             }
@@ -675,7 +722,8 @@ impl SignatureVerifier {
 
                         // Verify signature
                         if let Err(e) = algo.verify(pubkey, raw_data, &sig.signature) {
-                            signer_result.error = Some(format!("Signature verification failed: {}", e));
+                            signer_result.error =
+                                Some(format!("Signature verification failed: {}", e));
                             sig_valid = false;
                             break;
                         }

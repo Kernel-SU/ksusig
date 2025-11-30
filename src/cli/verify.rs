@@ -119,7 +119,8 @@ pub fn execute(args: VerifyArgs) -> Result<(), Box<dyn std::error::Error>> {
 
     // Verify Source Stamp (if present) with digest verification
     // Note: We preserve the error to distinguish between "not found" and "verification failed"
-    let stamp_result = verifier.verify_source_stamp_with_digest(&signing_block, Some(&digest_context));
+    let stamp_result =
+        verifier.verify_source_stamp_with_digest(&signing_block, Some(&digest_context));
 
     // Display V2 signature verification result
     match &v2_result {
@@ -146,10 +147,7 @@ pub fn execute(args: VerifyArgs) -> Result<(), Box<dyn std::error::Error>> {
                     }
 
                     if !signer.cert_chain.is_empty() {
-                        println!(
-                            "    Chain: {} certificate(s)",
-                            signer.cert_chain.len()
-                        );
+                        println!("    Chain: {} certificate(s)", signer.cert_chain.len());
                         if args.verbose {
                             for line in describe_chain(&signer.cert_chain) {
                                 println!("      {}", line);
@@ -248,7 +246,10 @@ pub fn execute(args: VerifyArgs) -> Result<(), Box<dyn std::error::Error>> {
                     failure_reasons.push("certificate not trusted");
                 }
 
-                eprintln!("⚠ Source Stamp verification FAILED: {}", failure_reasons.join(", "));
+                eprintln!(
+                    "⚠ Source Stamp verification FAILED: {}",
+                    failure_reasons.join(", ")
+                );
                 eprintln!("  Signature valid: {}", result.signature_valid);
                 eprintln!("  Digest valid: {}", result.digest_valid);
                 eprintln!("  Certificate chain valid: {}", result.cert_chain_valid);
@@ -291,9 +292,9 @@ pub fn execute(args: VerifyArgs) -> Result<(), Box<dyn std::error::Error>> {
     let stamp_failed = stamp_verification_failed;
 
     // Overall result - V2 must pass ALL checks: signature, digest, chain, trust
-    let v2_fully_valid = v2_result.as_ref().is_some_and(|r| {
-        r.signature_valid && r.digest_valid && r.cert_chain_valid && r.is_trusted
-    });
+    let v2_fully_valid = v2_result
+        .as_ref()
+        .is_some_and(|r| r.signature_valid && r.digest_valid && r.cert_chain_valid && r.is_trusted);
 
     println!();
     if v2_fully_valid {

@@ -140,18 +140,18 @@ fn parse_eocd_at_offset(
         .get(0..4)
         .and_then(|s| s.try_into().ok())
         .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "Invalid EOCD signature"))?;
-    let disk_number = u16::from_le_bytes(create_fixed_buffer_2(
-        data.get(4..6)
-            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "Invalid EOCD"))?,
-    ));
-    let disk_with_cd = u16::from_le_bytes(create_fixed_buffer_2(
-        data.get(6..8)
-            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "Invalid EOCD"))?,
-    ));
-    let num_entries = u16::from_le_bytes(create_fixed_buffer_2(
-        data.get(8..10)
-            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "Invalid EOCD"))?,
-    ));
+    let disk_number =
+        u16::from_le_bytes(create_fixed_buffer_2(data.get(4..6).ok_or_else(|| {
+            io::Error::new(io::ErrorKind::InvalidData, "Invalid EOCD")
+        })?));
+    let disk_with_cd =
+        u16::from_le_bytes(create_fixed_buffer_2(data.get(6..8).ok_or_else(|| {
+            io::Error::new(io::ErrorKind::InvalidData, "Invalid EOCD")
+        })?));
+    let num_entries =
+        u16::from_le_bytes(create_fixed_buffer_2(data.get(8..10).ok_or_else(|| {
+            io::Error::new(io::ErrorKind::InvalidData, "Invalid EOCD")
+        })?));
     let total_entries = u16::from_le_bytes(create_fixed_buffer_2(
         data.get(10..12)
             .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "Invalid EOCD"))?,

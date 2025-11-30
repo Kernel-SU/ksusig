@@ -380,8 +380,7 @@ impl ModuleSigner {
             SigningBlock::new_with_padding(blocks)
                 .map_err(|e| format!("Failed to create padded signing block: {}", e))
         } else {
-            SigningBlock::new(blocks)
-                .map_err(|e| format!("Failed to create signing block: {}", e))
+            SigningBlock::new(blocks).map_err(|e| format!("Failed to create signing block: {}", e))
         }
     }
 

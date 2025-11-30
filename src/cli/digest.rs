@@ -110,10 +110,9 @@ pub fn execute(args: DigestArgs) -> Result<(), Box<dyn std::error::Error>> {
     // Format output
     let output = match args.format {
         OutputFormat::Hex => hex_encode(&digest),
-        OutputFormat::Base64 => base64::Engine::encode(
-            &base64::engine::general_purpose::STANDARD,
-            &digest,
-        ),
+        OutputFormat::Base64 => {
+            base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &digest)
+        }
     };
 
     // Print digest to stdout (for piping)
@@ -155,7 +154,11 @@ fn dump_regions(
 
     output.flush()?;
 
-    eprintln!("Dumped {} bytes to {}", total_written, output_path.display());
+    eprintln!(
+        "Dumped {} bytes to {}",
+        total_written,
+        output_path.display()
+    );
 
     Ok(())
 }

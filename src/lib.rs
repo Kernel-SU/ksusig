@@ -88,6 +88,6 @@ pub use signer::{
 #[cfg(feature = "verify")]
 pub use verifier::{
     verify_with_digest, verify_with_roots_and_digest, CertChainVerifier, DigestContext,
-    SignatureVerifier, SignerVerifyResult, TrustedRoots, VerifyAllResult, VerifyError, VerifyResult,
+    SignatureVerifier, SignerVerifyResult, TrustedRoots, VerifyAllResult, VerifyError,
+    VerifyResult,
 };
-

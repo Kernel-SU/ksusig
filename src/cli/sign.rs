@@ -159,10 +159,7 @@ pub fn execute(args: SignArgs) -> Result<(), Box<dyn std::error::Error>> {
 
     // Get all required algorithms from the signer
     let required_algos = signer.required_algorithms();
-    println!(
-        "ℹ 需要计算 {} 种算法的 digest",
-        required_algos.len()
-    );
+    println!("ℹ 需要计算 {} 种算法的 digest", required_algos.len());
 
     // Calculate digests for each required algorithm
     println!("Calculating digests...");

@@ -83,7 +83,9 @@ fn cli_digest_signed_zip_works() {
         .args(["digest", "tests/fixtures/test_signed.zip"])
         .assert()
         .success()
-        .stdout(contains("265c3e52dba8ac115eb84e432c9c3025421b5b40e53e1056b6681071db8f2500"));
+        .stdout(contains(
+            "265c3e52dba8ac115eb84e432c9c3025421b5b40e53e1056b6681071db8f2500",
+        ));
 }
 
 #[test]
@@ -204,7 +206,9 @@ fn create_minimal_elf() -> Vec<u8> {
 #[test]
 fn cli_digest_elf_default_sections() {
     let mut elf_file = NamedTempFile::new().expect("create temp file");
-    elf_file.write_all(&create_minimal_elf()).expect("write ELF");
+    elf_file
+        .write_all(&create_minimal_elf())
+        .expect("write ELF");
     elf_file.flush().expect("flush");
 
     Command::cargo_bin("ksusig")
@@ -221,7 +225,9 @@ fn cli_digest_elf_default_sections() {
 #[test]
 fn cli_digest_elf_custom_section() {
     let mut elf_file = NamedTempFile::new().expect("create temp file");
-    elf_file.write_all(&create_minimal_elf()).expect("write ELF");
+    elf_file
+        .write_all(&create_minimal_elf())
+        .expect("write ELF");
     elf_file.flush().expect("flush");
 
     Command::cargo_bin("ksusig")
@@ -240,7 +246,9 @@ fn cli_digest_elf_custom_section() {
 #[test]
 fn cli_digest_elf_dump() {
     let mut elf_file = NamedTempFile::new().expect("create temp file");
-    elf_file.write_all(&create_minimal_elf()).expect("write ELF");
+    elf_file
+        .write_all(&create_minimal_elf())
+        .expect("write ELF");
     elf_file.flush().expect("flush");
 
     let output = NamedTempFile::new().expect("create output file");

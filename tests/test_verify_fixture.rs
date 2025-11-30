@@ -1,7 +1,10 @@
-use std::path::PathBuf;
 use std::io::Write;
+use std::path::PathBuf;
 
-use ksusig::{Algorithms, CertChainVerifier, DigestContext, Module, SignatureVerifier, TrustedRoots, VerifyError};
+use ksusig::{
+    Algorithms, CertChainVerifier, DigestContext, Module, SignatureVerifier, TrustedRoots,
+    VerifyError,
+};
 
 fn load_signing_block(path: &str) -> Result<ksusig::SigningBlock, String> {
     let module_path = PathBuf::from(path);
@@ -18,11 +21,16 @@ fn verify_fixture_signed_zip_has_trusted_chain() {
     let verifier = SignatureVerifier::with_builtin_roots();
     // Note: Using None for digest context - digest_valid will be false
     // For full verification including content integrity, use Module::verify_full()
-    let result = verifier.verify_v2_with_digest(&signing_block, None).expect("verify v2");
+    let result = verifier
+        .verify_v2_with_digest(&signing_block, None)
+        .expect("verify v2");
 
     assert!(result.signature_valid, "signature should be valid");
     // digest_valid is false when no digest context is provided (security improvement)
-    assert!(!result.digest_valid, "digest_valid should be false without digest context");
+    assert!(
+        !result.digest_valid,
+        "digest_valid should be false without digest context"
+    );
     assert!(
         result.cert_chain_valid,
         "certificate chain should be structurally valid"
@@ -42,7 +50,9 @@ fn verify_fixture_signed_zip_has_trusted_chain() {
     );
     // Note: warnings include "Content integrity NOT verified" when no digest context is provided
     // This is expected behavior in the new API
-    let non_integrity_warnings: Vec<_> = result.warnings.iter()
+    let non_integrity_warnings: Vec<_> = result
+        .warnings
+        .iter()
         .filter(|w| !w.contains("Content integrity NOT verified"))
         .collect();
     assert!(
@@ -113,7 +123,10 @@ fn verify_dual_signed_has_v2_and_stamp_results() {
     let v2 = result.v2.expect("v2 result");
     assert!(v2.signature_valid, "v2 signature should be valid");
     // digest_valid is false when no digest context is provided
-    assert!(!v2.digest_valid, "v2 digest_valid should be false without digest context");
+    assert!(
+        !v2.digest_valid,
+        "v2 digest_valid should be false without digest context"
+    );
     assert!(v2.cert_chain_valid, "v2 chain should be valid");
     assert!(
         !v2.is_trusted,
@@ -157,8 +170,8 @@ fn verify_unsigned_module_returns_no_signature() {
 #[test]
 fn verify_tampered_content_fails_digest_verification() {
     // 读取原始签名模块
-    let original_bytes = std::fs::read("tests/fixtures/test_ksu_signed.zip")
-        .expect("read original fixture");
+    let original_bytes =
+        std::fs::read("tests/fixtures/test_ksu_signed.zip").expect("read original fixture");
 
     // 创建临时文件并篡改内容
     let temp_dir = tempfile::tempdir().expect("create temp dir");
@@ -173,7 +186,8 @@ fn verify_tampered_content_fails_digest_verification() {
     }
 
     let mut file = std::fs::File::create(&tampered_path).expect("create temp file");
-    file.write_all(&tampered_bytes).expect("write tampered file");
+    file.write_all(&tampered_bytes)
+        .expect("write tampered file");
     drop(file);
 
     // 加载篡改后的模块
@@ -216,8 +230,8 @@ fn verify_tampered_content_fails_digest_verification() {
 /// 摘要验证：使用正确的摘要上下文应通过验证
 #[test]
 fn verify_with_correct_digest_context_passes() {
-    let module = Module::new(PathBuf::from("tests/fixtures/test_ksu_signed.zip"))
-        .expect("load module");
+    let module =
+        Module::new(PathBuf::from("tests/fixtures/test_ksu_signed.zip")).expect("load module");
     let signing_block = module.get_signing_block().expect("get signing block");
 
     // 计算正确的摘要
@@ -228,19 +242,23 @@ fn verify_with_correct_digest_context_passes() {
 
     // 使用正确的摘要上下文验证
     let verifier = SignatureVerifier::with_builtin_roots();
-    let result = verifier.verify_v2_with_digest(&signing_block, Some(&digest_ctx))
+    let result = verifier
+        .verify_v2_with_digest(&signing_block, Some(&digest_ctx))
         .expect("verification should succeed");
 
     assert!(result.signature_valid, "signature should be valid");
-    assert!(result.digest_valid, "digest should be valid with correct context");
+    assert!(
+        result.digest_valid,
+        "digest should be valid with correct context"
+    );
     assert!(result.is_trusted, "should be trusted by builtin roots");
 }
 
 /// 伪造摘要：提供错误的摘要值应失败
 #[test]
 fn verify_with_wrong_digest_fails() {
-    let module = Module::new(PathBuf::from("tests/fixtures/test_ksu_signed.zip"))
-        .expect("load module");
+    let module =
+        Module::new(PathBuf::from("tests/fixtures/test_ksu_signed.zip")).expect("load module");
     let signing_block = module.get_signing_block().expect("get signing block");
 
     // 创建错误的摘要上下文（全零摘要）
@@ -253,10 +271,7 @@ fn verify_with_wrong_digest_fails() {
 
     match result {
         Ok(r) => {
-            assert!(
-                !r.digest_valid,
-                "wrong digest should fail verification"
-            );
+            assert!(!r.digest_valid, "wrong digest should fail verification");
         }
         Err(VerifyError::MultiSignerFailure(errors)) => {
             assert!(
@@ -273,11 +288,13 @@ fn verify_with_wrong_digest_fails() {
 /// 多签名者：验证结果应包含所有签名者信息
 #[test]
 fn verify_reports_all_signers() {
-    let signing_block = load_signing_block("tests/fixtures/test_ksu_signed.zip")
-        .expect("load signing block");
+    let signing_block =
+        load_signing_block("tests/fixtures/test_ksu_signed.zip").expect("load signing block");
 
     let verifier = SignatureVerifier::with_builtin_roots();
-    let result = verifier.verify_v2_with_digest(&signing_block, None).expect("verify v2");
+    let result = verifier
+        .verify_v2_with_digest(&signing_block, None)
+        .expect("verify v2");
 
     // 检查签名者结果列表
     assert!(
@@ -287,10 +304,19 @@ fn verify_reports_all_signers() {
 
     // 检查第一个签名者的详细信息
     let first_signer = &result.signers[0];
-    assert!(first_signer.signature_valid, "first signer should have valid signature");
+    assert!(
+        first_signer.signature_valid,
+        "first signer should have valid signature"
+    );
     // digest_valid is false when no digest context is provided
-    assert!(!first_signer.digest_valid, "first signer digest_valid should be false without digest context");
-    assert!(first_signer.certificate.is_some(), "first signer should have certificate");
+    assert!(
+        !first_signer.digest_valid,
+        "first signer digest_valid should be false without digest context"
+    );
+    assert!(
+        first_signer.certificate.is_some(),
+        "first signer should have certificate"
+    );
 
     // 整体结果应与单个签名者一致（只有一个签名者时）
     assert_eq!(
@@ -303,22 +329,30 @@ fn verify_reports_all_signers() {
 /// 证书链验证：未知发行者应报告不可信
 #[test]
 fn verify_unknown_issuer_reports_untrusted() {
-    let signing_block = load_signing_block("tests/fixtures/test_signed.zip")
-        .expect("load signing block");
+    let signing_block =
+        load_signing_block("tests/fixtures/test_signed.zip").expect("load signing block");
 
     // 使用空的信任根
     let verifier = SignatureVerifier::with_trusted_roots(TrustedRoots::new());
-    let result = verifier.verify_v2_with_digest(&signing_block, None).expect("verify v2");
+    let result = verifier
+        .verify_v2_with_digest(&signing_block, None)
+        .expect("verify v2");
 
     // 签名应有效，但不可信
     assert!(result.signature_valid, "signature should be valid");
     // digest_valid is false when no digest context is provided
-    assert!(!result.digest_valid, "digest_valid should be false without digest context");
+    assert!(
+        !result.digest_valid,
+        "digest_valid should be false without digest context"
+    );
     assert!(!result.is_trusted, "should not be trusted without roots");
 
     // 检查警告信息
-    let has_root_warning = result.warnings.iter()
-        .any(|w| w.contains("No trusted roots") || w.contains("Unknown issuer") || w.contains("Content integrity NOT verified"));
+    let has_root_warning = result.warnings.iter().any(|w| {
+        w.contains("No trusted roots")
+            || w.contains("Unknown issuer")
+            || w.contains("Content integrity NOT verified")
+    });
     assert!(
         has_root_warning || !result.is_trusted,
         "should warn about missing trust or report untrusted"
