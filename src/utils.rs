@@ -124,11 +124,22 @@ impl MyReader {
     /// # Errors
     /// Returns a string if the parsing fails.
     pub(crate) fn get_to(&mut self, len: usize) -> Result<&[u8], String> {
-        let pos = self.pos;
-        self.pos += len;
-        match self.data.get(pos..self.pos) {
-            Some(data) => Ok(data),
-            None => Err(format!("Error: out of bounds: {}..{}", pos, self.pos)),
+        let end = self
+            .pos
+            .checked_add(len)
+            .ok_or_else(|| format!("Error: position overflow: {} + {}", self.pos, len))?;
+
+        match self.data.get(self.pos..end) {
+            Some(data) => {
+                self.pos = end; // Only update position on success
+                Ok(data)
+            }
+            None => Err(format!(
+                "Error: out of bounds: {}..{} (len: {})",
+                self.pos,
+                end,
+                self.data.len()
+            )),
         }
     }
 

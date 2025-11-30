@@ -299,6 +299,23 @@ impl ModuleSigner {
         self
     }
 
+    /// Get all algorithms needed for signing
+    ///
+    /// Returns a list of unique algorithms required by all configured signers.
+    /// This is useful for calculating the correct digests before signing.
+    pub fn required_algorithms(&self) -> Vec<Algorithms> {
+        let mut algos = Vec::new();
+        if let Some(ref v2) = self.v2_config {
+            algos.push(v2.algorithm.clone());
+        }
+        if let Some(ref stamp) = self.stamp_config {
+            if !algos.contains(&stamp.algorithm) {
+                algos.push(stamp.algorithm.clone());
+            }
+        }
+        algos
+    }
+
     /// Sign and generate a complete signing block
     ///
     /// # Arguments

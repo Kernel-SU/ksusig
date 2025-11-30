@@ -100,9 +100,13 @@ fn verify_dual_signed_has_v2_and_stamp_results() {
         .expect("extract signing block from fixture");
 
     let verifier = SignatureVerifier::with_builtin_roots();
-    let (v2_result, stamp_result) = verifier.verify_all(&signing_block);
+    let result = verifier.verify_all(&signing_block);
 
-    let v2 = v2_result.expect("v2 result");
+    // Test new VerifyAllResult API
+    assert!(result.has_v2(), "should have V2 signature");
+    assert!(result.has_source_stamp(), "should have source stamp");
+
+    let v2 = result.v2.expect("v2 result");
     assert!(v2.signature_valid, "v2 signature should be valid");
     assert!(v2.cert_chain_valid, "v2 chain should be valid");
     assert!(
@@ -110,7 +114,7 @@ fn verify_dual_signed_has_v2_and_stamp_results() {
         "v2 should not be trusted without custom root"
     );
 
-    let stamp = stamp_result.expect("stamp result");
+    let stamp = result.source_stamp.expect("stamp result");
     assert!(stamp.signature_valid, "stamp signature should be valid");
     assert!(stamp.cert_chain_valid, "stamp chain should be valid");
     assert!(

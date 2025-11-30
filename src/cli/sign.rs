@@ -119,9 +119,6 @@ pub fn execute(args: SignArgs) -> Result<(), Box<dyn std::error::Error>> {
         println!("✓ Source Stamp key loaded");
     }
 
-    // Select algorithm based on V2 private key curve (before moving v2_creds)
-    let algorithm = v2_creds.algorithm.clone();
-
     // Create signer
     let signer = if let Some(stamp) = stamp_creds {
         ModuleSigner::with_source_stamp(
@@ -159,15 +156,26 @@ pub fn execute(args: SignArgs) -> Result<(), Box<dyn std::error::Error>> {
             region.name, region.offset, region.size
         );
     }
-    println!("ℹ 自动使用密钥曲线对应算法: {}", algorithm);
 
-    // Calculate digests
+    // Get all required algorithms from the signer
+    let required_algos = signer.required_algorithms();
+    println!(
+        "ℹ 需要计算 {} 种算法的 digest",
+        required_algos.len()
+    );
+
+    // Calculate digests for each required algorithm
     println!("Calculating digests...");
-    let digest = signable.digest(&algorithm)?;
+    let mut digest_list = Vec::new();
+    for algo in &required_algos {
+        println!("  - 计算 {} digest...", algo);
+        let digest = signable.digest(algo)?;
+        digest_list.push(Digest::new(algo.clone(), digest));
+    }
     println!("✓ Digest calculation complete");
 
     // Create Digests
-    let digests = Digests::new(vec![Digest::new(algorithm, digest)]);
+    let digests = Digests::new(digest_list);
 
     // Sign
     println!("Signing...");
